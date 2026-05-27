@@ -26,3 +26,9 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/blackmarble_toolkit"]
+
+[dependency-groups]
+dev = [
+    "mkdocstrings-python>=2.0.3",
+    "zensical>=0.0.43",
+]

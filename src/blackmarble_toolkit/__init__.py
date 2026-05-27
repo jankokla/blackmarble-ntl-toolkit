@@ -1,4 +1,4 @@
-from .base import PaperImplementation
+from .methods.base import PaperImplementation
 from .methods.angular import Hu2024AngularCorrection, QuadraticVZACorrection
 from .methods.filters import (
     BlackMarbleHighQualityFilter,

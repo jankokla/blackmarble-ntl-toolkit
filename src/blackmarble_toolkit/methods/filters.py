@@ -1,4 +1,4 @@
-from typing import Dict, Set, Any
+from typing import Any, Dict, Set
 
 import bottleneck as bn
 import dask.array as da
@@ -64,7 +64,7 @@ class FilterLowNTL(PaperImplementation):
     """
 
     @property
-    def required_products_and_bands(self):
+    def required_products_and_bands(self) -> Dict[str, Set[str]]:
         """
         Declare dependencies.
 
@@ -191,7 +191,7 @@ class CloudSnowFilter(PaperImplementation):
         self.return_mask = return_mask
 
     @property
-    def required_products_and_bands(self):
+    def required_products_and_bands(self) -> Dict[str, Set[str]]:
         """
         Specifiy the required products and bands for the filter.
 
@@ -277,16 +277,18 @@ class CloudSnowFilter(PaperImplementation):
         )
 
         if self.return_mask:
-            return ds.assign({
-                "DNB_BRDF_Corrected_NTL": masked_ntl,
-                "raw_ntl": ntl,
-                "cloud_mask": cloud_mask,
-                "cirrus_mask": cirrus_mask,
-                "snow_ice_mask": snow_ice_mask,
-                "snow_flag_mask": snow_flag_mask,
-                "combined_mask": combined_mask,
-                "buffered_mask": buffered_mask,
-            })
+            return ds.assign(
+                {
+                    "DNB_BRDF_Corrected_NTL": masked_ntl,
+                    "raw_ntl": ntl,
+                    "cloud_mask": cloud_mask,
+                    "cirrus_mask": cirrus_mask,
+                    "snow_ice_mask": snow_ice_mask,
+                    "snow_flag_mask": snow_flag_mask,
+                    "combined_mask": combined_mask,
+                    "buffered_mask": buffered_mask,
+                }
+            )
 
         return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
 
@@ -401,4 +403,6 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
         # restore the original dimension order correctly across all Xarray versions.
         z_scores = z_scores.transpose(*da.dims)
 
-        return ds.assign(DNB_BRDF_Corrected_NTL=xr.where(z_scores <= self.threshold, da, np.nan))
+        return ds.assign(
+            DNB_BRDF_Corrected_NTL=xr.where(z_scores <= self.threshold, da, np.nan)
+        )

@@ -22,19 +22,7 @@ class LinearInterpolationGapFilling(PaperImplementation):
         Returns:
             Dictionary with product names as keys and a set of required bands as values.
         """
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}}
-
-    def _standardize_dataset(self, ds: xr.Dataset) -> xr.Dataset:
-        """
-        Standardizes NTL band names to ensure robustness to hyphen vs underscore variations.
-        """
-        if (
-            ds is not None
-            and "DNB_BRDF_Corrected_NTL" in ds.data_vars
-            and "DNB_BRDF-Corrected_NTL" not in ds.data_vars
-        ):
-            return ds.rename({"DNB_BRDF_Corrected_NTL": "DNB_BRDF-Corrected_NTL"})
-        return ds
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}}
 
     def _transform(
         self, ds: xr.Dataset | None = None, **kwargs
@@ -43,14 +31,10 @@ class LinearInterpolationGapFilling(PaperImplementation):
         Apply the science transformation.
         Standardizes the dataset and then calls _transform.
         """
-        if ds is not None:
-            ds = self._standardize_dataset(ds)
         return self._transform(ds, **kwargs)
 
     @abstractmethod
-    def _transform(
-        self, ds: xr.Dataset | None = None, **kwargs
-    ) -> xr.DataArray | xr.Dataset:
+    def _transform(self, ds: xr.Dataset | None = None, **kwargs) -> xr.Dataset:
         """
         Applies linear interpolation over the time dimension.
 
@@ -60,4 +44,4 @@ class LinearInterpolationGapFilling(PaperImplementation):
         Returns:
             The gap-filled Dataset or DataArray.
         """
-        return ds[["DNB_BRDF-Corrected_NTL"]].interpolate_na(dim="time", method="linear")
+        return ds[["DNB_BRDF_Corrected_NTL"]].interpolate_na(dim="time", method="linear")

@@ -68,13 +68,7 @@ class NTLPipeline:
         current_ds = ds
 
         for step in self.steps:
-            result = step.transform(current_ds, **catalog)
-
-            if isinstance(result, xr.DataArray):
-                var_name = result.name if result.name else "DNB_BRDF-Corrected_NTL"
-                current_ds = current_ds.assign({var_name: result})
-            else:
-                current_ds = result
+            current_ds = step.transform(current_ds, **catalog)
 
             step_meta = {"step": step.name, "params": step.params}
             history.append(step_meta)

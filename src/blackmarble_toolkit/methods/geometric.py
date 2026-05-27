@@ -45,24 +45,24 @@ class AveragePooling2D(PaperImplementation):
         """
         Required data layers from NASA's Black Marble suite.
         """
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}}
 
-    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset | xr.DataArray:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Applies a spatial rolling mean to the NTL radiance layer.
 
         Args:
-            ds: xarray.Dataset containing the 'DNB_BRDF-Corrected_NTL' band.
+            ds: xarray.Dataset containing the 'DNB_BRDF_Corrected_NTL' band.
 
         Returns:
-            xr.DataArray: The spatially smoothed NTL radiance.
+            xr.Dataset: The spatially smoothed NTL radiance dataset.
         """
-        var_name = "DNB_BRDF-Corrected_NTL"
+        var_name = "DNB_BRDF_Corrected_NTL"
 
         x, y = self.filter_size
         smoothed = self._spatial_rolling_mean(ds[var_name], window_x=x, window_y=y)
 
-        return smoothed.rename(var_name)
+        return ds.assign({var_name: smoothed})
 
 
 class Hu2024AAveraging(PaperImplementation):
@@ -101,9 +101,9 @@ class Hu2024AAveraging(PaperImplementation):
         """
         Required data layers from NASA's Black Marble suite[cite: 933].
         """
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}}
 
-    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset | xr.DataArray:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Applies the A-Averaging filter logic to the NTL radiance.
 
@@ -114,7 +114,7 @@ class Hu2024AAveraging(PaperImplementation):
         4. Spatially smoothing only the Mismatch Light to mitigate blooming.
         5. Reconstructing the final radiance.
         """
-        ntl = ds["DNB_BRDF-Corrected_NTL"]
+        ntl = ds["DNB_BRDF_Corrected_NTL"]
 
         # 1. remove readings more than 3 standard deviations from the mean
         mean_ntl = ntl.mean(dim="time")
@@ -142,4 +142,4 @@ class Hu2024AAveraging(PaperImplementation):
         # ff it was an outlier day, keep original NTL
         ntl_reconstructed = xr.where(is_outlier, ntl, ntl_consistent)
 
-        return ntl_reconstructed.transpose(*ntl.dims)
+        return ds.assign(DNB_BRDF_Corrected_NTL=ntl_reconstructed.transpose(*ntl.dims))

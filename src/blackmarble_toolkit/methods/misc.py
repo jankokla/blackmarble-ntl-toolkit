@@ -46,7 +46,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
                 "Sensor_Azimuth",
             },
             "VNP46A2": {
-                "DNB_BRDF-Corrected_NTL",
+                "DNB_BRDF_Corrected_NTL",
                 "DNB_Lunar_Irradiance",
                 "QF_Cloud_Mask",
             },
@@ -141,7 +141,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
         # apply via apply_ufunc
         corrected_ntl, params, pvals = xr.apply_ufunc(
             self._regress_pixel,
-            ds["DNB_BRDF-Corrected_NTL"],
+            ds["DNB_BRDF_Corrected_NTL"],
             moon_norm,
             sensor_azimuth_norm,
             sensor_zenith_norm,
@@ -161,7 +161,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
 
         spatial_dims = [dim for dim in ds.dims if dim != "time"]
 
-        corrected_ntl = corrected_ntl.rename("DNB_BRDF-Corrected_NTL").transpose(
+        corrected_ntl = corrected_ntl.rename("DNB_BRDF_Corrected_NTL").transpose(
             "time", *spatial_dims
         )
 
@@ -194,7 +194,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
 
         out_ds = xr.Dataset(
             {
-                "DNB_BRDF-Corrected_NTL": corrected_ntl,
+                "DNB_BRDF_Corrected_NTL": corrected_ntl,
                 "params": params,
                 "pvalues": pvals,
             }

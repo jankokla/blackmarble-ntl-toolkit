@@ -33,21 +33,22 @@ class BlackMarbleHighQualityFilter(PaperImplementation):
         """
         return {
             "VNP46A2": {
-                "DNB_BRDF-Corrected_NTL",
+                "DNB_BRDF_Corrected_NTL",
                 "Mandatory_Quality_Flag",
             },
         }
 
-    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.DataArray:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Applies the filter to isolate high-quality NTL observations.
         """
-        ntl = ds["DNB_BRDF-Corrected_NTL"]
+        ntl = ds["DNB_BRDF_Corrected_NTL"]
 
         quality_mask = ds["Mandatory_Quality_Flag"] == 0
         positive_mask = ntl >= 0
 
-        return ntl.where(quality_mask & positive_mask)
+        masked_ntl = ntl.where(quality_mask & positive_mask)
+        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
 
 
 class FilterLowNTL(PaperImplementation):
@@ -70,9 +71,9 @@ class FilterLowNTL(PaperImplementation):
         Returns:
             A dictionary specifying the required product and band.
         """
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}}
 
-    def _transform(self, ds, **kwargs) -> xr.DataArray:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Applies the low radiance filter to the dataset.
 
@@ -81,9 +82,9 @@ class FilterLowNTL(PaperImplementation):
             **kwargs: Additional keyword arguments passed to the transform.
 
         Returns:
-            A DataArray with values below 1 replaced by NaN.
+            A Dataset with values below 1 replaced by NaN in the NTL band.
         """
-        var_name = "DNB_BRDF-Corrected_NTL"
+        var_name = "DNB_BRDF_Corrected_NTL"
 
         da_ntl = ds[var_name]
 
@@ -91,7 +92,7 @@ class FilterLowNTL(PaperImplementation):
 
         filtered_da.attrs = da_ntl.attrs
 
-        return filtered_da
+        return ds.assign({var_name: filtered_da})
 
 
 class Jia2023HighQualityFilter(PaperImplementation):
@@ -137,17 +138,17 @@ class Jia2023HighQualityFilter(PaperImplementation):
         return {
             "VNP46A1": {"Solar_Zenith", "Moon_Illumination_Fraction"},
             "VNP46A2": {
-                "DNB_BRDF-Corrected_NTL",
+                "DNB_BRDF_Corrected_NTL",
                 "Mandatory_Quality_Flag",
                 "QF_Cloud_Mask",
             },
         }
 
-    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.DataArray:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Applies the four screening steps to isolate high-quality NTL observations.
         """
-        ntl = ds["DNB_BRDF-Corrected_NTL"]
+        ntl = ds["DNB_BRDF_Corrected_NTL"]
 
         # 1. solar filtering: pixels with SZA < 108° are removed to avoid stray light
         solar_mask = ds["Solar_Zenith"] >= self.sza_threshold
@@ -164,7 +165,8 @@ class Jia2023HighQualityFilter(PaperImplementation):
 
         final_mask = solar_mask & cloud_free_mask & quality_mask & moon_mask
 
-        return ntl.where(final_mask)
+        masked_ntl = ntl.where(final_mask)
+        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
 
 
 class CloudSnowFilter(PaperImplementation):
@@ -198,13 +200,13 @@ class CloudSnowFilter(PaperImplementation):
         """
         return {
             "VNP46A2": {
-                "DNB_BRDF-Corrected_NTL",
+                "DNB_BRDF_Corrected_NTL",
                 "QF_Cloud_Mask",
                 "Snow_Flag",
             }
         }
 
-    def _transform(self, ds, **kwargs):
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Apply cloud and snow masking, dilates the mask, and masks the NTL data.
 
@@ -220,7 +222,7 @@ class CloudSnowFilter(PaperImplementation):
 
         qf = ds["QF_Cloud_Mask"]
         snow_flag = ds["Snow_Flag"]
-        ntl = ds["DNB_BRDF-Corrected_NTL"]
+        ntl = ds["DNB_BRDF_Corrected_NTL"]
 
         # bit 6-7: cloud detection results & confidence indicator
         # 10 = probably cloudy, 11 = confident cloudy
@@ -271,24 +273,22 @@ class CloudSnowFilter(PaperImplementation):
         ).rename("buffered_mask")
 
         masked_ntl = xr.where(~buffered_mask, ntl, np.nan).rename(
-            "DNB_BRDF-Corrected_NTL"
+            "DNB_BRDF_Corrected_NTL"
         )
 
         if self.return_mask:
-            return xr.Dataset(
-                {
-                    "DNB_BRDF-Corrected_NTL": masked_ntl,
-                    "raw_ntl": ntl,
-                    "cloud_mask": cloud_mask,
-                    "cirrus_mask": cirrus_mask,
-                    "snow_ice_mask": snow_ice_mask,
-                    "snow_flag_mask": snow_flag_mask,
-                    "combined_mask": combined_mask,
-                    "buffered_mask": buffered_mask,
-                }
-            )
+            return ds.assign({
+                "DNB_BRDF_Corrected_NTL": masked_ntl,
+                "raw_ntl": ntl,
+                "cloud_mask": cloud_mask,
+                "cirrus_mask": cirrus_mask,
+                "snow_ice_mask": snow_ice_mask,
+                "snow_flag_mask": snow_flag_mask,
+                "combined_mask": combined_mask,
+                "buffered_mask": buffered_mask,
+            })
 
-        return masked_ntl
+        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
 
 
 class ModifiedZScoreOutlierRemoval(PaperImplementation):
@@ -325,7 +325,7 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
     @property
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
         """Declare dependencies."""
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}}
 
     @staticmethod
     def _calc_rolling_zscore_numpy(
@@ -370,3 +370,35 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
         z_score[mask_ok] = 0.0
 
         return z_score
+
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
+        """
+        Apply the rolling modified z-score outlier removal transformation.
+
+        Args:
+            ds: Input xarray dataset containing DNB_BRDF_Corrected_NTL.
+
+        Returns:
+            An xarray Dataset with the outlier pixels replaced by np.nan in
+                DNB_BRDF_Corrected_NTL.
+        """
+        da = ds["DNB_BRDF_Corrected_NTL"]
+
+        if hasattr(da.data, "rechunk"):
+            da = da.chunk({"time": -1})
+
+        z_scores = xr.apply_ufunc(
+            self._calc_rolling_zscore_numpy,
+            da,
+            kwargs={"window": self.window, "threshold": self.threshold},
+            input_core_dims=[["time"]],
+            output_core_dims=[["time"]],
+            dask="parallelized",
+            output_dtypes=[float],
+            dask_gufunc_kwargs={"allow_rechunk": True},
+        )
+
+        # restore the original dimension order correctly across all Xarray versions.
+        z_scores = z_scores.transpose(*da.dims)
+
+        return ds.assign(DNB_BRDF_Corrected_NTL=xr.where(z_scores <= self.threshold, da, np.nan))

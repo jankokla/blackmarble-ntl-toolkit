@@ -31,7 +31,7 @@ class QuadraticVZACorrection(PaperImplementation):
         """
         Required data layers from NASA's Black Marble suite.
         """
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL"}, "VNP46A1": {"Sensor_Zenith"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL"}, "VNP46A1": {"Sensor_Zenith"}}
 
     @staticmethod
     def _pixel_vza_logic(ntl, zenith):
@@ -82,7 +82,7 @@ class QuadraticVZACorrection(PaperImplementation):
         """
         corrected_ntl, correction_factor = xr.apply_ufunc(
             self._pixel_vza_logic,
-            ds["DNB_BRDF-Corrected_NTL"],
+            ds["DNB_BRDF_Corrected_NTL"],
             ds["Sensor_Zenith"],
             input_core_dims=[["time"], ["time"]],
             output_core_dims=[["time"], ["time"]],
@@ -93,7 +93,7 @@ class QuadraticVZACorrection(PaperImplementation):
 
         return xr.Dataset(
             data_vars={
-                "DNB_BRDF-Corrected_NTL": corrected_ntl,
+                "DNB_BRDF_Corrected_NTL": corrected_ntl,
                 "VZA_Correction_Factor": correction_factor,
             },
             coords=ds.coords,
@@ -113,7 +113,7 @@ class Hu2024AngularCorrection(PaperImplementation):
     @property
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
         """Declare dependencies."""
-        return {"VNP46A2": {"DNB_BRDF-Corrected_NTL", "Sensor_Zenith"}}
+        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL", "Sensor_Zenith"}}
 
     @staticmethod
     def _process_angular_correction_block(
@@ -164,7 +164,7 @@ class Hu2024AngularCorrection(PaperImplementation):
 
         return out_flat.reshape(original_shape)
 
-    def _transform(self, ds: xr.Dataset, **kwargs: Any) -> xr.DataArray | xr.Dataset:
+    def _transform(self, ds: xr.Dataset, **kwargs: Any) -> xr.Dataset:
         """
         Apply the angular correction transformation.
 
@@ -173,7 +173,7 @@ class Hu2024AngularCorrection(PaperImplementation):
             **kwargs: Additional arguments, must include 'yearly_ds'.
 
         Returns:
-            The corrected NTL DataArray.
+            The corrected NTL Dataset.
         """
         yearly_ds = kwargs.get("yearly_ds")
         if yearly_ds is None:
@@ -181,7 +181,7 @@ class Hu2024AngularCorrection(PaperImplementation):
                 "yearly_ds must be provided in kwargs for Hu2024AngularCorrection"
             )
 
-        ntl = ds["DNB_BRDF-Corrected_NTL"]
+        ntl = ds["DNB_BRDF_Corrected_NTL"]
         annual = yearly_ds["AllAngle_Composite_Snow_Free"]
 
         # group all the days of a year into 16 groups according to the daily vza.
@@ -232,4 +232,4 @@ class Hu2024AngularCorrection(PaperImplementation):
         original_chunks = {dim: ntl.chunks[i][0] for i, dim in enumerate(ntl.dims)}
 
         ntl_sfac.encoding = {}
-        return ntl_sfac.chunk(original_chunks)
+        return ds.assign(DNB_BRDF_Corrected_NTL=ntl_sfac.chunk(original_chunks))

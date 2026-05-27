@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 
 import dask.array as da
 import numpy as np
@@ -30,35 +30,56 @@ class PaperImplementation(ABC):
     @property
     @abstractmethod
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
-        """Declare dependencies (e.g., {'VNP46A2': {'DNB_BRDF-Corrected_NTL'}})"""
+        """Declare dependencies (e.g., {'VNP46A2': {'DNB_BRDF_Corrected_NTL'}})"""
         pass
 
     def _standardize_dataset(self, ds: xr.Dataset) -> xr.Dataset:
-        """
-        Standardizes NTL band names to ensure robustness to hyphen vs underscore variations.
-        """
-        if (
-            ds is not None
-            and "DNB_BRDF_Corrected_NTL" in ds.data_vars
-            and "DNB_BRDF-Corrected_NTL" not in ds.data_vars
-        ):
-            return ds.rename({"DNB_BRDF_Corrected_NTL": "DNB_BRDF-Corrected_NTL"})
-        return ds
+        """Standardize NTL band names to the canonical 'ntl' name."""            
+        if ds is None:
+            raise ValueError("Input dataset cannot be None.")
 
-    def transform(self, ds: xr.Dataset, **kwargs) -> xr.DataArray | xr.Dataset:
+        mapping = {
+            k: "ntl" 
+            for k in ["DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"] 
+            if k in ds.data_vars
+        }
+        return ds.rename(mapping) if mapping else ds
+
+    def _get_expected_ntl_name(self) -> Optional[str]:
+        """Finds the raw NTL band name this step expects from its required dependencies."""
+        raw_names = {"DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"}
+        reqs = self.required_products_and_bands
+        if reqs:
+            for bands in reqs.values():
+                for band in bands:
+                    if band in raw_names:
+                        return band
+        return None
+
+    def transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Apply the science transformation.
-        Standardizes the dataset and then calls _transform.
+        If the step expects a raw NTL name and the pipeline provides 'ntl', it maps it temporarily.
+        After the transformation, it standardizes the output back to 'ntl'.
         """
         if ds is not None:
             ds = self._standardize_dataset(ds)
-        return self._transform(ds, **kwargs)
+            expected = self._get_expected_ntl_name()
+            if expected and "ntl" in ds.data_vars:
+                ds = ds.rename({"ntl": expected})
+                
+        ds = self._transform(ds, **kwargs)
+        
+        if ds is not None:
+            ds = self._standardize_dataset(ds)
+            
+        return ds
 
     @abstractmethod
-    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.DataArray | xr.Dataset:
+    def _transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Apply the science transformation.
-        Returns either a single xarray object or a dictionary of objects.
+        Returns a dataset with the applied changes.
         """
         pass
 

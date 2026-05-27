@@ -24,61 +24,49 @@ def mock_env():
 
 class TestGeometryHelpers:
     """
-    tests the explicit geometry helper functions.
+    Test the explicit geometry helper functions.
     """
 
     @patch("blackmarble_toolkit.retrieval.ee")
     def test_bbox_to_geometry(self, mock_ee):
-        """
-        tests that a 4-element list/tuple correctly calls ee.Geometry.BBox.
-        """
+        """Test that a 4-element list/tuple correctly calls ee.Geometry.BBox."""
         bbox = [-72.0, 18.0, -71.0, 19.0]
         bbox_to_geometry(bbox)
         mock_ee.Geometry.BBox.assert_called_once_with(*bbox)
 
     def test_bbox_to_geometry_invalid_length(self):
         """
-        ensures passing a bounding box with the wrong number of elements raises an error.
+        Ensure passing a bounding box with the wrong number of elements raises an error.
         """
         with pytest.raises(ValueError, match="exactly 4 elements"):
             bbox_to_geometry([-72.0, 18.0, -71.0])
 
     @patch("blackmarble_toolkit.retrieval.ee")
     def test_geojson_to_geometry_feature_collection(self, mock_ee):
-        """
-        tests that a geojson FeatureCollection routes to ee.FeatureCollection.
-        """
+        """Test that a geojson FeatureCollection routes to ee.FeatureCollection."""
         geojson = {"type": "FeatureCollection", "features": []}
         geojson_to_geometry(geojson)
         mock_ee.FeatureCollection.assert_called_once_with(geojson)
 
     @patch("blackmarble_toolkit.retrieval.ee")
     def test_geojson_to_geometry_polygon(self, mock_ee):
-        """
-        tests that a geojson Polygon routes to ee.Geometry.
-        """
+        """Tests that a geojson Polygon routes to ee.Geometry."""
         geojson = {"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]}
         geojson_to_geometry(geojson)
         mock_ee.Geometry.assert_called_once_with(geojson)
 
     def test_geojson_to_geometry_missing_type(self):
-        """
-        ensures an invalid geojson dictionary raises an error.
-        """
+        """Ensures an invalid geojson dictionary raises an error."""
         with pytest.raises(ValueError, match="missing 'type' key"):
             geojson_to_geometry({"coordinates": []})
 
 
 class TestBlackMarbleRetriever:
-    """
-    tests the main BlackMarbleRetriever class.
-    """
+    """Test the main BlackMarbleRetriever class."""
 
     @patch("blackmarble_toolkit.retrieval.ee.Initialize")
     def test_initialization_success(self, mock_initialize, mock_env):
-        """
-        tests that initialization reads the env var and calls ee.Initialize.
-        """
+        """Tests that initialization reads the env var and calls ee.Initialize."""
         retriever = BlackMarbleRetriever()
         assert retriever.project_name == "test-project-123"
         mock_initialize.assert_called_once_with(project="test-project-123")
@@ -88,9 +76,7 @@ class TestBlackMarbleRetriever:
     def test_initialization_auth_fallback(
         self, mock_initialize, mock_authenticate, mock_env
     ):
-        """
-        tests that if Initialize fails, it calls Authenticate and retries.
-        """
+        """Tests that if Initialize fails, it calls Authenticate and retries."""
         # Raise the real EEException on the first call, then succeed on the second
         mock_initialize.side_effect = [
             ee.ee_exception.EEException("Not authenticated"),
@@ -103,10 +89,7 @@ class TestBlackMarbleRetriever:
         assert mock_initialize.call_count == 2
 
     def test_initialization_missing_project(self):
-        """
-        ensures an error is raised if no project is provided or in env.
-        """
-        # ensure env var is wiped
+        """Ensure an error is raised if no project is provided or in env."""
         if "EE_PROJECT" in os.environ:
             del os.environ["EE_PROJECT"]
 
@@ -118,9 +101,7 @@ class TestBlackMarbleRetriever:
     def test_get_data_execution(
         self, mock_image_collection, mock_open_dataset, mock_env
     ):
-        """
-        tests the complete data retrieval pipeline assuming a pre-built ee.Geometry.
-        """
+        """Test the complete data retrieval assuming a pre-built ee.Geometry."""
         # mock the ee.ImageCollection chaining (.filterBounds().filterDate())
         mock_ic_instance = MagicMock()
         mock_image_collection.return_value = mock_ic_instance
@@ -134,8 +115,11 @@ class TestBlackMarbleRetriever:
         with patch("blackmarble_toolkit.retrieval.ee.Initialize"):
             retriever = BlackMarbleRetriever()
 
-        # create a dummy mock for ee.Geometry
         mock_region = MagicMock(spec=ee.Geometry)
+        mock_region.getInfo.return_value = {
+            "type": "Polygon",
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]
+        }
 
         result_ds = retriever.get_data(
             product="VNP46A2",
@@ -152,9 +136,7 @@ class TestBlackMarbleRetriever:
         assert "DNB_BRDF_Corrected_NTL" in result_ds.data_vars
 
     def test_get_data_invalid_product(self, mock_env):
-        """
-        ensures requesting an unsupported product raises an error.
-        """
+        """Ensure requesting an unsupported product raises an error."""
         with patch("blackmarble_toolkit.retrieval.ee.Initialize"):
             retriever = BlackMarbleRetriever()
 

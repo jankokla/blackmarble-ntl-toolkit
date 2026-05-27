@@ -3,6 +3,8 @@ from typing import Any, Dict, List, Tuple
 
 import ee
 import xarray as xr
+from xee import helpers
+import shapely.geometry
 
 
 def bbox_to_geometry(bbox: List[float] | Tuple[float, ...]) -> ee.Geometry:
@@ -55,10 +57,8 @@ class BlackMarbleRetriever:
     """
 
     _PRODUCT_CATALOG = {
-        "VNP46A1": "NASA/VIIRS/002/VNP46A1",
+        "VNP46A1": "NOAA/VIIRS/001/VNP46A1",
         "VNP46A2": "NASA/VIIRS/002/VNP46A2",
-        "VNP46A3": "NASA/VIIRS/002/VNP46A3",
-        "VNP46A4": "NASA/VIIRS/002/VNP46A4",
     }
 
     _NATIVE_SCALE_DEGREES = 15.0 / 3600.0
@@ -129,12 +129,13 @@ class BlackMarbleRetriever:
         if bands:
             ic = ic.select(bands)
 
-        ds = xr.open_dataset(
-            filename_or_obj=ic,
-            engine="ee",
-            geometry=region,
-            scale=self._NATIVE_SCALE_DEGREES,
-            crs="EPSG:4326",
+        shapely_geom = shapely.geometry.shape(region.getInfo())
+
+        grid = helpers.fit_geometry(
+            shapely_geom,
+            grid_scale=(self._NATIVE_SCALE_DEGREES, -self._NATIVE_SCALE_DEGREES),
         )
+
+        ds = xr.open_dataset(filename_or_obj=ic, engine="ee", **grid)
 
         return ds

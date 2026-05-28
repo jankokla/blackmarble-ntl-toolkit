@@ -1,10 +1,71 @@
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import ee
+import geopandas as gpd
+import shapely.geometry
 import xarray as xr
 from xee import helpers
-import shapely.geometry
+
+
+def gdf_to_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
+    """
+    Convert a GeoPandas GeoDataFrame to an Earth Engine Geometry.
+
+    Args:
+        gdf: A GeoDataFrame containing the spatial data to convert.
+
+    Returns:
+        An ee.Geometry object representing the combined geometries of the dataframe.
+
+    Raises:
+        ValueError: If the GeoDataFrame is empty.
+    """
+    if gdf.empty:
+        raise ValueError("Invalid GeoDataFrame empty dataframe provided.")
+
+    geojson_dict = gdf.__geo_interface__
+
+    return ee.FeatureCollection(geojson_dict).geometry()
+
+
+def geojson_to_gdf(
+    geojson_dict: Dict[str, Any], epsg: int = 4326, id_col: Optional[str] = None
+) -> gpd.GeoDataFrame:
+    """
+    Converts a GeoJSON dictionary into a GeoPandas GeoDataFrame.
+
+    Args:
+        geojson_dict: Dictionary representing a GeoJSON FeatureCollection or Feature.
+        epsg: The EPSG code for the coordinate reference system. Defaults to 4326.
+        id_col: The property key to use for the ID. If None, a sequential ID is assigned.
+
+    Returns:
+        A GeoDataFrame containing the parsed spatial data.
+
+    Raises:
+        ValueError: If the specified id_col is not found in the parsed properties.
+    """
+    if "features" in geojson_dict:
+        features = geojson_dict["features"]
+    else:
+        features = [geojson_dict]
+
+    gdf = gpd.GeoDataFrame.from_features(features)
+
+    gdf.set_crs(epsg=epsg, inplace=True)
+
+    if id_col is not None:
+        if id_col not in gdf.columns:
+            raise ValueError(
+                f"The specified id_col '{id_col}' was not "
+                "found in the GeoJSON properties."
+            )
+        gdf["id"] = gdf[id_col]
+    else:
+        gdf["id"] = range(len(gdf))
+
+    return gdf
 
 
 def bbox_to_geometry(bbox: List[float] | Tuple[float, ...]) -> ee.Geometry:
@@ -136,6 +197,7 @@ class BlackMarbleRetriever:
             grid_scale=(self._NATIVE_SCALE_DEGREES, -self._NATIVE_SCALE_DEGREES),
         )
 
-        ds = xr.open_dataset(filename_or_obj=ic, engine="ee", **grid)
+        # TODO: make chunks dynamic
+        ds = xr.open_dataset(filename_or_obj=ic, engine="ee", chunks="auto", **grid)
 
         return ds

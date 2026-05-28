@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 import xarray as xr
 
-from blackmarble_toolkit.base import PaperImplementation
+from blackmarble_toolkit.methods.base import PaperImplementation
 from blackmarble_toolkit.pipeline import NTLPipeline
 
 

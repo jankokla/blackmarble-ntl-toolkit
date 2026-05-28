@@ -142,4 +142,6 @@ class Hu2024AAveraging(PaperImplementation):
         # ff it was an outlier day, keep original NTL
         ntl_reconstructed = xr.where(is_outlier, ntl, ntl_consistent)
 
-        return ds.assign(DNB_BRDF_Corrected_NTL=ntl_reconstructed.transpose(*ntl.dims))
+        return ds[["DNB_BRDF_Corrected_NTL"]].assign(
+            DNB_BRDF_Corrected_NTL=ntl_reconstructed.transpose(*ntl.dims)
+        )

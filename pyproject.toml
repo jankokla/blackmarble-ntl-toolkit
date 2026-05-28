@@ -3,14 +3,14 @@ name = "blackmarble-ntl-toolkit"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "Jan Kokla", email = "jan.kokla@gmail.com" }
-]
+authors = [{ name = "Jan Kokla", email = "jan.kokla@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
     "bottleneck>=1.6.0",
     "dask>=2026.3.0",
     "earthengine-api>=1.7.26",
+    "flox>=0.11.2",
+    "geocube>=0.7.1",
     "numpy>=2.4.6",
     "pandas>=3.0.3",
     "pytest>=9.0.3",
@@ -28,7 +28,4 @@ build-backend = "hatchling.build"
 packages = ["src/blackmarble_toolkit"]
 
 [dependency-groups]
-dev = [
-    "mkdocstrings-python>=2.0.3",
-    "zensical>=0.0.43",
-]
+dev = ["jupyter>=1.1.1", "mkdocstrings-python>=2.0.3", "zensical>=0.0.43"]

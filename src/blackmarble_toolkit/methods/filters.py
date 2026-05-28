@@ -290,7 +290,7 @@ class CloudSnowFilter(PaperImplementation):
                 }
             )
 
-        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
+        return ds[["DNB_BRDF_Corrected_NTL"]].assign(DNB_BRDF_Corrected_NTL=masked_ntl)
 
 
 class ModifiedZScoreOutlierRemoval(PaperImplementation):
@@ -355,7 +355,7 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
         mad_zero = mad_b == 0
         mad_non_zero = mad_b > 0
 
-        # Case 1: MAD > 0
+        # case 1: MAD > 0
         mask_mad_non_zero = valid_mask & mad_non_zero
         # prevent division by zero runtime warning by replacing zeros in mad_b
         # we know mad_b is > 0 in this mask, so it's safe.
@@ -364,7 +364,7 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
             0.6745 * abs_dev[mask_mad_non_zero] / safe_divisor[mask_mad_non_zero]
         )
 
-        # Case 2: MAD == 0
+        # case 2: MAD == 0
         mask_mad_zero = valid_mask & mad_zero
         mask_outlier = mask_mad_zero & (abs_dev > 0)
         z_score[mask_outlier] = threshold + 1.0

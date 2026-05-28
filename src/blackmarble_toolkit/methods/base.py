@@ -27,6 +27,9 @@ class PaperImplementation(ABC):
         """Returns the class name as a identifier for the transformation."""
         return self.__class__.__name__
 
+    def __str__(self) -> str:
+        return self.name
+
     @property
     @abstractmethod
     def required_products_and_bands(self) -> Dict[str, Set[str]]:

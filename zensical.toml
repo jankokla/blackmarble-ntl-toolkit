@@ -24,6 +24,7 @@ nav = [
     { "Preprocessing Methods" = "content/api_reference/preprocessing_methods.md" },
     { "Pipeline" = "content/api_reference/pipeline.md" },
     { "Aggregation" = "content/api_reference/aggregation.md" },
+    { "Visualization" = "content/api_reference/visualization.md" },
   ] },
 ]
 

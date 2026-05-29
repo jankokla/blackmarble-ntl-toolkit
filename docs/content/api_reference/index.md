@@ -8,5 +8,6 @@ The API is divided into the following core modules:
 - **[Preprocessing Methods](preprocessing_methods.md):** The individual filtering, correction, and imputation methods available for cleaning the NTL data.
 - **[Pipeline](pipeline.md):** The `NTLPipeline` orchestration class, responsible for running sequences of transformations and caching intermediate steps.
 - **[Aggregation](aggregation.md):** Functions for rasterizing vector shapes and performing memory-safe spatial aggregations using Dask.
+- **[Visualization](visualization.md):** Tools for plotting multi-step aggregated NTL time-series data.
 
 For higher-level workflows and practical examples of how these components fit together, please see the [User Guide](../user_guide/index.md).

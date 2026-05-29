@@ -84,7 +84,7 @@ class NTLPipeline:
 
         self._intermediates = []
         if cache_intermediates:
-            self._intermediates.append(current_ds.assign_attrs(step="raw"))
+            self._intermediates.append(current_ds.assign_attrs(step="Raw"))
 
         for step in self.steps:
             current_ds = step.transform(current_ds, **catalog)
@@ -179,3 +179,51 @@ class NTLPipeline:
 
         self._aggregated_ds = aggregated_results
         return aggregated_results
+
+    def plot(
+        self,
+        variable: str = "ntl",
+        indexers: dict | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        titles: list[str] | None = None,
+        y_max: float | None = None,
+        title: str | None = None,
+        font_scale: float = 1.0,
+        moving_average: int | None = None,
+    ):
+        """
+        Plots the aggregated time-series data using the visualization module.
+        Must run `aggregate()` before calling this method.
+
+        Args:
+            variable: The variable name to plot (default "ntl").
+            indexers: Optional dictionary of dimension coordinates to select specific data (e.g. `{"geonameid": "Region_A"}` or `{"x": 10.5, "y": 20.1}`).
+            start_date: Optional start date string (e.g., '2022-01-01').
+            end_date: Optional end date string (e.g., '2022-12-31').
+            titles: Optional list of titles corresponding to each subplot.
+            y_max: Optional maximum limit for the y-axis.
+            title: Optional string for the overall figure title.
+            font_scale: The scaling factor for the plot's font sizes.
+            moving_average: Optional moving average window size (days).
+
+        Returns:
+            A matplotlib Figure.
+        """
+        if not self._aggregated_ds:
+            raise ValueError("No aggregated data available. Run aggregate() first.")
+
+        from blackmarble_toolkit.visualization import plot_multiple_timeseries
+
+        return plot_multiple_timeseries(
+            datasets=self._aggregated_ds,
+            variable=variable,
+            indexers=indexers,
+            start_date=start_date,
+            end_date=end_date,
+            titles=titles,
+            y_max=y_max,
+            title=title,
+            font_scale=font_scale,
+            moving_average=moving_average,
+        )

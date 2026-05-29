@@ -129,8 +129,8 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
         aut = (seasons == "SON").astype(np.float32)
         win = (seasons == "DJF").astype(np.float32)
 
-        sensor_azimuth = ds["Sensor_Azimuth"]
-        sensor_zenith = ds["Sensor_Zenith"]
+        sensor_azimuth = self._get_band(ds, "Sensor_Azimuth", kwargs)
+        sensor_zenith = self._get_band(ds, "Sensor_Zenith", kwargs)
 
         # normalize variables for numerical stability as per Table 1 of the paper
         moon_norm = ds["DNB_Lunar_Irradiance"] / 1e4

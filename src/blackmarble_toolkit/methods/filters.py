@@ -149,9 +149,11 @@ class Jia2023HighQualityFilter(PaperImplementation):
         Applies the four screening steps to isolate high-quality NTL observations.
         """
         ntl = ds["DNB_BRDF_Corrected_NTL"]
+        solar_zenith = self._get_band(ds, "Solar_Zenith", kwargs)
+        moon_fraction = self._get_band(ds, "Moon_Illumination_Fraction", kwargs)
 
         # 1. solar filtering: pixels with SZA < 108° are removed to avoid stray light
-        solar_mask = ds["Solar_Zenith"] >= self.sza_threshold
+        solar_mask = solar_zenith >= self.sza_threshold
 
         # 2. cloud labeling
         qf_safe = ds["QF_Cloud_Mask"].fillna(192).astype(np.uint16)
@@ -161,7 +163,7 @@ class Jia2023HighQualityFilter(PaperImplementation):
         quality_mask = ds["Mandatory_Quality_Flag"] == 0
 
         # 4. moonlight mitigation: discards pixels with moon illumination > 60%
-        moon_mask = ds["Moon_Illumination_Fraction"] <= self.moon_fraction_threshold
+        moon_mask = moon_fraction <= self.moon_fraction_threshold
 
         final_mask = solar_mask & cloud_free_mask & quality_mask & moon_mask
 

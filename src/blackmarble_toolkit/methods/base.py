@@ -37,13 +37,13 @@ class PaperImplementation(ABC):
         pass
 
     def _standardize_dataset(self, ds: xr.Dataset) -> xr.Dataset:
-        """Standardize NTL band names to the canonical 'ntl' name."""            
+        """Standardize NTL band names to the canonical 'ntl' name."""
         if ds is None:
             raise ValueError("Input dataset cannot be None.")
 
         mapping = {
-            k: "ntl" 
-            for k in ["DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"] 
+            k: "ntl"
+            for k in ["DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"]
             if k in ds.data_vars
         }
         return ds.rename(mapping) if mapping else ds
@@ -59,6 +59,22 @@ class PaperImplementation(ABC):
                         return band
         return None
 
+    def _get_band(self, ds: xr.Dataset, band_name: str, catalog: dict) -> xr.DataArray:
+        """
+        Helper method to retrieve a band either from the primary dataset or from
+        an auxiliary dataset provided in the catalog (passed via kwargs).
+        """
+        if band_name in ds.data_vars or band_name in ds.coords:
+            return ds[band_name]
+
+        for cat_ds in catalog.values():
+            if band_name in cat_ds.data_vars or band_name in cat_ds.coords:
+                return cat_ds[band_name]
+
+        raise KeyError(
+            f"Band '{band_name}' not found in the primary dataset or the provided catalog."
+        )
+
     def transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
         Apply the science transformation.
@@ -70,12 +86,12 @@ class PaperImplementation(ABC):
             expected = self._get_expected_ntl_name()
             if expected and "ntl" in ds.data_vars:
                 ds = ds.rename({"ntl": expected})
-                
+
         ds = self._transform(ds, **kwargs)
-        
+
         if ds is not None:
             ds = self._standardize_dataset(ds)
-            
+
         return ds
 
     @abstractmethod

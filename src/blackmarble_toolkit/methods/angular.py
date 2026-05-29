@@ -80,10 +80,12 @@ class QuadraticVZACorrection(PaperImplementation):
         """
         Rechunks to time-contiguous chunks and applies the correction.
         """
+        sensor_zenith = self._get_band(ds, "Sensor_Zenith", kwargs)
+
         corrected_ntl, correction_factor = xr.apply_ufunc(
             self._pixel_vza_logic,
             ds["DNB_BRDF_Corrected_NTL"],
-            ds["Sensor_Zenith"],
+            sensor_zenith,
             input_core_dims=[["time"], ["time"]],
             output_core_dims=[["time"], ["time"]],
             vectorize=True,
@@ -113,7 +115,10 @@ class Hu2024AngularCorrection(PaperImplementation):
     @property
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
         """Declare dependencies."""
-        return {"VNP46A2": {"DNB_BRDF_Corrected_NTL", "Sensor_Zenith"}}
+        return {
+            "VNP46A2": {"DNB_BRDF_Corrected_NTL"},
+            "NOAA/VIIRS/DNB/ANNUAL_V22": {"average"},
+        }
 
     @staticmethod
     def _process_angular_correction_block(
@@ -170,19 +175,13 @@ class Hu2024AngularCorrection(PaperImplementation):
 
         Args:
             ds: The daily dataset containing NTL and VZA.
-            **kwargs: Additional arguments, must include 'yearly_ds'.
+            **kwargs: Additional arguments containing catalog.
 
         Returns:
             The corrected NTL Dataset.
         """
-        yearly_ds = kwargs.get("yearly_ds")
-        if yearly_ds is None:
-            raise ValueError(
-                "yearly_ds must be provided in kwargs for Hu2024AngularCorrection"
-            )
-
         ntl = ds["DNB_BRDF_Corrected_NTL"]
-        annual = yearly_ds["AllAngle_Composite_Snow_Free"]
+        annual = self._get_band(ds, "average", kwargs)
 
         # group all the days of a year into 16 groups according to the daily vza.
         # since snpp repeats every 16 days, group by day modulo 16.

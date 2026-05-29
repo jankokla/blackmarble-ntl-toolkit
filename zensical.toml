@@ -16,12 +16,14 @@ nav = [
     { "Data Retrieval" = "content/user_guide/data_retrieval.md" },
     { "Preprocessing" = "content/user_guide/preprocessing.md" },
     { "Aggregation" = "content/user_guide/aggregation.md" },
+    { "Visualization" = "content/user_guide/visualization.md" },
   ] },
   { "API Reference" = [
     "content/api_reference/index.md",
     { "Retrieval" = "content/api_reference/retrieval.md" },
     { "Preprocessing Methods" = "content/api_reference/preprocessing_methods.md" },
     { "Pipeline" = "content/api_reference/pipeline.md" },
+    { "Aggregation" = "content/api_reference/aggregation.md" },
   ] },
 ]
 

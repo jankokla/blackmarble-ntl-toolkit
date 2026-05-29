@@ -32,24 +32,12 @@ Alternatively, you can export it directly in your terminal:
 export EE_PROJECT="your-google-cloud-project-id"
 ```
 
-### Specifying it in Data Retrieval
+### In Python
 
-You can also specify it during the data retrieval:
+You can also specify it in your python script:
 
 ```python
-from blackmarble_toolkit.retrieval import BlackMarbleRetriever, geojson_to_geometry
+from blackmarble_toolkit.utils import initialize_ee
 
-EXAMPLE_GEOJSON = {...}
-
-retriever = BlackMarbleRetriever(project_name="your-google-cloud-project-id")
-region = geojson_to_geometry(EXAMPLE_GEOJSON)
-
-
-ds = retriever.get_data(
-    product="VNP46A2",
-    start_date="2022-01-01",
-    end_date="2023-12-31",
-    region=region,
-    bands=["DNB_BRDF_Corrected_NTL", "QF_Cloud_Mask", "Snow_Flag"],
-)
+initialize_ee(project_name="your-google-cloud-project-id")
 ```

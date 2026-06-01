@@ -23,8 +23,9 @@ class QuadraticVZACorrection(PaperImplementation):
     predicted nadir radiance and the predicted radiance at the observed angle.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, return_factor: bool = False):
+        super().__init__(return_factor=return_factor)
+        self.return_factor = return_factor
 
     @property
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
@@ -84,20 +85,22 @@ class QuadraticVZACorrection(PaperImplementation):
 
         corrected_ntl, correction_factor = xr.apply_ufunc(
             self._pixel_vza_logic,
-            ds["DNB_BRDF_Corrected_NTL"],
+            ds[self.target_var_name],
             sensor_zenith,
             input_core_dims=[["time"], ["time"]],
             output_core_dims=[["time"], ["time"]],
             vectorize=True,
             dask="parallelized",
             output_dtypes=[np.float32, np.float32],
+            dask_gufunc_kwargs={"allow_rechunk": True},
         )
 
+        res_vars = {self.target_var_name: corrected_ntl}
+        if self.return_factor:
+            res_vars["VZA_Correction_Factor"] = correction_factor
+
         return xr.Dataset(
-            data_vars={
-                "DNB_BRDF_Corrected_NTL": corrected_ntl,
-                "VZA_Correction_Factor": correction_factor,
-            },
+            data_vars=res_vars,
             coords=ds.coords,
         ).transpose(*ds.dims)
 
@@ -180,7 +183,7 @@ class Hu2024AngularCorrection(PaperImplementation):
         Returns:
             The corrected NTL Dataset.
         """
-        ntl = ds["DNB_BRDF_Corrected_NTL"]
+        ntl = ds[self.target_var_name]
         annual = self._get_band(ds, "average", kwargs)
 
         # group all the days of a year into 16 groups according to the daily vza.
@@ -231,4 +234,6 @@ class Hu2024AngularCorrection(PaperImplementation):
         original_chunks = {dim: ntl.chunks[i][0] for i, dim in enumerate(ntl.dims)}
 
         ntl_sfac.encoding = {}
-        return ds.assign(DNB_BRDF_Corrected_NTL=ntl_sfac.chunk(original_chunks))
+        return ds[[self.target_var_name]].assign(
+            **{self.target_var_name: ntl_sfac.chunk(original_chunks)}
+        )

@@ -13,6 +13,10 @@ class PaperImplementation(ABC):
     Focuses on declaring data dependencies and applying scientific transformations.
     """
 
+    # Note: Google Earth Engine uses "DNB_BRDF_Corrected_NTL", 
+    # whereas blackmarblepy uses "DNB_BRDF-Corrected_NTL".
+    target_var_name = "DNB_BRDF_Corrected_NTL"
+
     def __init__(self, **params: Any):
         """
         Stores configuration parameters for metadata tracking.
@@ -43,14 +47,14 @@ class PaperImplementation(ABC):
 
         mapping = {
             k: "ntl"
-            for k in ["DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"]
+            for k in [self.target_var_name, "DNB_BRDF-Corrected_NTL"]
             if k in ds.data_vars
         }
         return ds.rename(mapping) if mapping else ds
 
     def _get_expected_ntl_name(self) -> Optional[str]:
         """Finds the raw NTL band name this step expects from its required dependencies."""
-        raw_names = {"DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"}
+        raw_names = {self.target_var_name, "DNB_BRDF-Corrected_NTL"}
         reqs = self.required_products_and_bands
         if reqs:
             for bands in reqs.values():
@@ -90,6 +94,9 @@ class PaperImplementation(ABC):
         ds = self._transform(ds, **kwargs)
 
         if ds is not None:
+            if isinstance(ds, xr.DataArray):
+                ds = ds.to_dataset(name=self.target_var_name)
+                
             ds = self._standardize_dataset(ds)
 
         return ds

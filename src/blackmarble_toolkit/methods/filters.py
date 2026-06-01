@@ -18,9 +18,7 @@ class BlackMarbleHighQualityFilter(PaperImplementation):
     labeled as 'High Quality' by the mandatory sensor checks.
     """
 
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         """
         Initializes the High Quality filter with default NASA VNP46A2 flag requirements.
         """
@@ -42,13 +40,13 @@ class BlackMarbleHighQualityFilter(PaperImplementation):
         """
         Applies the filter to isolate high-quality NTL observations.
         """
-        ntl = ds["DNB_BRDF_Corrected_NTL"]
+        ntl = ds[self.target_var_name]
 
         quality_mask = ds["Mandatory_Quality_Flag"] == 0
         positive_mask = ntl >= 0
 
         masked_ntl = ntl.where(quality_mask & positive_mask)
-        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
+        return ds[[self.target_var_name]].assign(**{self.target_var_name: masked_ntl})
 
 
 class FilterLowNTL(PaperImplementation):
@@ -84,15 +82,13 @@ class FilterLowNTL(PaperImplementation):
         Returns:
             A Dataset with values below 1 replaced by NaN in the NTL band.
         """
-        var_name = "DNB_BRDF_Corrected_NTL"
-
-        da_ntl = ds[var_name]
+        da_ntl = ds[self.target_var_name]
 
         filtered_da = da_ntl.where(da_ntl >= 1.0)
 
         filtered_da.attrs = da_ntl.attrs
 
-        return ds.assign({var_name: filtered_da})
+        return ds[[self.target_var_name]].assign({self.target_var_name: filtered_da})
 
 
 class Jia2023HighQualityFilter(PaperImplementation):
@@ -148,7 +144,7 @@ class Jia2023HighQualityFilter(PaperImplementation):
         """
         Applies the four screening steps to isolate high-quality NTL observations.
         """
-        ntl = ds["DNB_BRDF_Corrected_NTL"]
+        ntl = ds[self.target_var_name]
         solar_zenith = self._get_band(ds, "Solar_Zenith", kwargs)
         moon_fraction = self._get_band(ds, "Moon_Illumination_Fraction", kwargs)
 
@@ -168,7 +164,7 @@ class Jia2023HighQualityFilter(PaperImplementation):
         final_mask = solar_mask & cloud_free_mask & quality_mask & moon_mask
 
         masked_ntl = ntl.where(final_mask)
-        return ds.assign(DNB_BRDF_Corrected_NTL=masked_ntl)
+        return ds[[self.target_var_name]].assign(**{self.target_var_name: masked_ntl})
 
 
 class CloudSnowFilter(PaperImplementation):
@@ -224,7 +220,7 @@ class CloudSnowFilter(PaperImplementation):
 
         qf = ds["QF_Cloud_Mask"]
         snow_flag = ds["Snow_Flag"]
-        ntl = ds["DNB_BRDF_Corrected_NTL"]
+        ntl = ds[self.target_var_name]
 
         # bit 6-7: cloud detection results & confidence indicator
         # 10 = probably cloudy, 11 = confident cloudy
@@ -274,14 +270,12 @@ class CloudSnowFilter(PaperImplementation):
             buffered_mask_data, dims=combined_mask.dims, coords=combined_mask.coords
         ).rename("buffered_mask")
 
-        masked_ntl = xr.where(~buffered_mask, ntl, np.nan).rename(
-            "DNB_BRDF_Corrected_NTL"
-        )
+        masked_ntl = xr.where(~buffered_mask, ntl, np.nan).rename(self.target_var_name)
 
         if self.return_mask:
             return ds.assign(
                 {
-                    "DNB_BRDF_Corrected_NTL": masked_ntl,
+                    self.target_var_name: masked_ntl,
                     "raw_ntl": ntl,
                     "cloud_mask": cloud_mask,
                     "cirrus_mask": cirrus_mask,
@@ -386,7 +380,7 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
             An xarray Dataset with the outlier pixels replaced by np.nan in
                 DNB_BRDF_Corrected_NTL.
         """
-        da = ds["DNB_BRDF_Corrected_NTL"]
+        da = ds[self.target_var_name]
 
         if hasattr(da.data, "rechunk"):
             da = da.chunk({"time": -1})
@@ -405,6 +399,6 @@ class ModifiedZScoreOutlierRemoval(PaperImplementation):
         # restore the original dimension order correctly across all Xarray versions.
         z_scores = z_scores.transpose(*da.dims)
 
-        return ds.assign(
-            DNB_BRDF_Corrected_NTL=xr.where(z_scores <= self.threshold, da, np.nan)
+        return ds[[self.target_var_name]].assign(
+            **{self.target_var_name: xr.where(z_scores <= self.threshold, da, np.nan)}
         )

@@ -1,3 +1,5 @@
+import os
+import warnings
 from typing import Any, Dict, List, Literal, Tuple
 
 import ee
@@ -6,6 +8,12 @@ import shapely.geometry
 import xarray as xr
 from shapely.geometry import shape
 from xee import helpers
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*Earth Engine is not initialized on worker.*",
+    category=UserWarning,
+)
 
 
 def gdf_to_geometry(gdf: gpd.GeoDataFrame) -> ee.Geometry:
@@ -156,6 +164,13 @@ class BlackMarbleRetriever:
         if product not in self._PRODUCT_CATALOG:
             raise ValueError(f"Product '{product}' is not supported.")
 
+        if not os.environ.get("GOOGLE_CLOUD_PROJECT"):
+            raise RuntimeError(
+                "Earth Engine project is not set in the environment. "
+                "Please set the 'GOOGLE_CLOUD_PROJECT' environment variable "
+                "to your Earth Engine project name so that the background workers can initialize."
+            )
+
         ee_collection_path = self._PRODUCT_CATALOG[product]
 
         ic = (
@@ -175,6 +190,13 @@ class BlackMarbleRetriever:
             grid_scale=(actual_scale, -actual_scale),
         )
 
-        ds = xr.open_dataset(filename_or_obj=ic, engine="ee", chunks=chunks, **grid)
+        ds = xr.open_dataset(
+            filename_or_obj=ic,
+            engine="ee",
+            chunks=chunks,
+            ee_init_if_necessary=True,
+            ee_init_kwargs={"project": os.environ["GOOGLE_CLOUD_PROJECT"]},
+            **grid,
+        )
 
         return ds

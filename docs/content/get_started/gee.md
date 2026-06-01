@@ -23,13 +23,13 @@ Google needs to know who is accessing Earth Engine to determine what services ar
 
 ```env
 # Earth Engine Project ID required for authentication and retrieval
-EE_PROJECT="your-google-cloud-project-id"
+GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
 Alternatively, you can export it directly in your terminal:
 
 ```bash
-export EE_PROJECT="your-google-cloud-project-id"
+export GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
 ### In Python
@@ -37,7 +37,9 @@ export EE_PROJECT="your-google-cloud-project-id"
 You can also specify it in your python script:
 
 ```python
-from blackmarble_toolkit.utils import initialize_ee
+import os
+os.environ["GOOGLE_CLOUD_PROJECT"] = "your-google-cloud-project-id"
 
-initialize_ee(project_name="your-google-cloud-project-id")
+from blackmarble_toolkit.utils import initialize_ee
+initialize_ee()
 ```

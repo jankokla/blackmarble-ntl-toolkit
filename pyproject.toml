@@ -33,7 +33,6 @@ packages = ["src/blackmarble_toolkit"]
 dev = [
     "geemap>=0.37.3",
     "jupyter>=1.1.1",
-    "mkdocs-bibtex>=4.4.0",
     "mkdocstrings-python>=2.0.3",
     "zensical>=0.0.43",
 ]

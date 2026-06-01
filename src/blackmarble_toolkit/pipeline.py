@@ -2,6 +2,7 @@ import json
 import logging
 from typing import List, Optional
 
+import dask
 import geopandas as gpd
 import xarray as xr
 
@@ -117,15 +118,18 @@ class NTLPipeline:
 
     def aggregate(
         self,
-        track_geometries: gpd.GeoDataFrame,
+        gdf: gpd.GeoDataFrame,
         geo_id_col: str = "geonameid",
+        compute: bool = False,
     ) -> List[xr.Dataset]:
         """
         Aggregate cached intermediate datasets over the provided geometries.
 
         Args:
-            track_geometries: GeoDataFrame containing the regions to aggregate over.
+            gdf: GeoDataFrame containing the regions to aggregate over.
             geo_id_col: The column name in the GeoDataFrame that uniquely identifies each shape.
+            compute: If True, evaluates the Dask computation graph for all aggregated
+                     datasets and pulls the results into memory. Defaults to False.
 
         Returns:
             A list of datasets, where each dataset contains the spatial aggregation
@@ -147,9 +151,7 @@ class NTLPipeline:
             raise ValueError(f"Expected NTL variable not found in the dataset.")
 
         # create mask once to avoid repeating expensive rasterizations
-        mask = get_gdf_mask_for_ds(
-            first_ds[[mask_var]], track_geometries, geo_id_col=geo_id_col
-        )
+        mask = get_gdf_mask_for_ds(first_ds[[mask_var]], gdf, geo_id_col=geo_id_col)
 
         aggregated_results = []
         for ds_step in to_aggregate:
@@ -176,6 +178,9 @@ class NTLPipeline:
 
             zonal_ds = zonal_ds.assign_attrs(step=ds_step.attrs.get("step", "unknown"))
             aggregated_results.append(zonal_ds)
+
+        if compute:
+            aggregated_results = list(dask.compute(*aggregated_results))
 
         self._aggregated_ds = aggregated_results
         return aggregated_results

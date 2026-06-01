@@ -34,7 +34,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
     (trend and seasonality) are preserved in the corrected output.
     """
 
-    def __init__(self, return_coeffs: bool = True):
+    def __init__(self, return_coeffs: bool = False):
         super().__init__(return_coeffs=return_coeffs)
         self.return_coeffs = return_coeffs
 
@@ -129,8 +129,8 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
         aut = (seasons == "SON").astype(np.float32)
         win = (seasons == "DJF").astype(np.float32)
 
-        sensor_azimuth = ds["Sensor_Azimuth"]
-        sensor_zenith = ds["Sensor_Zenith"]
+        sensor_azimuth = self._get_band(ds, "Sensor_Azimuth", kwargs)
+        sensor_zenith = self._get_band(ds, "Sensor_Zenith", kwargs)
 
         # normalize variables for numerical stability as per Table 1 of the paper
         moon_norm = ds["DNB_Lunar_Irradiance"] / 1e4
@@ -141,7 +141,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
         # apply via apply_ufunc
         corrected_ntl, params, pvals = xr.apply_ufunc(
             self._regress_pixel,
-            ds["DNB_BRDF_Corrected_NTL"],
+            ds[self.target_var_name],
             moon_norm,
             sensor_azimuth_norm,
             sensor_zenith_norm,
@@ -161,7 +161,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
 
         spatial_dims = [dim for dim in ds.dims if dim != "time"]
 
-        corrected_ntl = corrected_ntl.rename("DNB_BRDF_Corrected_NTL").transpose(
+        corrected_ntl = corrected_ntl.rename(self.target_var_name).transpose(
             "time", *spatial_dims
         )
 
@@ -194,7 +194,7 @@ class Yue2026DisturbanceFactorCorrection(PaperImplementation):
 
         out_ds = xr.Dataset(
             {
-                "DNB_BRDF_Corrected_NTL": corrected_ntl,
+                self.target_var_name: corrected_ntl,
                 "params": params,
                 "pvalues": pvals,
             }

@@ -57,12 +57,12 @@ class AveragePooling2D(PaperImplementation):
         Returns:
             xr.Dataset: The spatially smoothed NTL radiance dataset.
         """
-        var_name = "DNB_BRDF_Corrected_NTL"
+        var_name = self.target_var_name
 
         x, y = self.filter_size
         smoothed = self._spatial_rolling_mean(ds[var_name], window_x=x, window_y=y)
 
-        return ds.assign({var_name: smoothed})
+        return ds[[var_name]].assign({var_name: smoothed})
 
 
 class Hu2024AAveraging(PaperImplementation):
@@ -114,7 +114,7 @@ class Hu2024AAveraging(PaperImplementation):
         4. Spatially smoothing only the Mismatch Light to mitigate blooming.
         5. Reconstructing the final radiance.
         """
-        ntl = ds["DNB_BRDF_Corrected_NTL"]
+        ntl = ds[self.target_var_name]
 
         # 1. remove readings more than 3 standard deviations from the mean
         mean_ntl = ntl.mean(dim="time")
@@ -142,4 +142,6 @@ class Hu2024AAveraging(PaperImplementation):
         # ff it was an outlier day, keep original NTL
         ntl_reconstructed = xr.where(is_outlier, ntl, ntl_consistent)
 
-        return ds.assign(DNB_BRDF_Corrected_NTL=ntl_reconstructed.transpose(*ntl.dims))
+        return ds[[self.target_var_name]].assign(
+            **{self.target_var_name: ntl_reconstructed.transpose(*ntl.dims)}
+        )

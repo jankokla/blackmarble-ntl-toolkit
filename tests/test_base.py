@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 from xarray.testing import assert_allclose
 
-from blackmarble_toolkit.base import PaperImplementation
+from blackmarble_toolkit.methods.base import PaperImplementation
 
 
 class MockStep(PaperImplementation):

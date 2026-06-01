@@ -1,3 +1,5 @@
+import warnings
+
 from .methods.base import PaperImplementation
 from .methods.angular import Hu2024AngularCorrection, QuadraticVZACorrection
 from .methods.filters import (
@@ -10,6 +12,12 @@ from .methods.geometric import AveragePooling2D, Hu2024AAveraging
 from .methods.imputation import LinearInterpolationGapFilling
 from .pipeline import NTLPipeline
 from .retrieval import BlackMarbleRetriever
+
+warnings.filterwarnings(
+    "ignore",
+    message=".*Earth Engine is not initialized on worker.*",
+    category=UserWarning,
+)
 
 __all__ = [
     "NTLPipeline",

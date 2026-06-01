@@ -13,6 +13,10 @@ class PaperImplementation(ABC):
     Focuses on declaring data dependencies and applying scientific transformations.
     """
 
+    # Note: Google Earth Engine uses "DNB_BRDF_Corrected_NTL", 
+    # whereas blackmarblepy uses "DNB_BRDF-Corrected_NTL".
+    target_var_name = "DNB_BRDF_Corrected_NTL"
+
     def __init__(self, **params: Any):
         """
         Stores configuration parameters for metadata tracking.
@@ -27,6 +31,9 @@ class PaperImplementation(ABC):
         """Returns the class name as a identifier for the transformation."""
         return self.__class__.__name__
 
+    def __str__(self) -> str:
+        return self.name
+
     @property
     @abstractmethod
     def required_products_and_bands(self) -> Dict[str, Set[str]]:
@@ -34,20 +41,20 @@ class PaperImplementation(ABC):
         pass
 
     def _standardize_dataset(self, ds: xr.Dataset) -> xr.Dataset:
-        """Standardize NTL band names to the canonical 'ntl' name."""            
+        """Standardize NTL band names to the canonical 'ntl' name."""
         if ds is None:
             raise ValueError("Input dataset cannot be None.")
 
         mapping = {
-            k: "ntl" 
-            for k in ["DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"] 
+            k: "ntl"
+            for k in [self.target_var_name, "DNB_BRDF-Corrected_NTL"]
             if k in ds.data_vars
         }
         return ds.rename(mapping) if mapping else ds
 
     def _get_expected_ntl_name(self) -> Optional[str]:
         """Finds the raw NTL band name this step expects from its required dependencies."""
-        raw_names = {"DNB_BRDF_Corrected_NTL", "DNB_BRDF-Corrected_NTL"}
+        raw_names = {self.target_var_name, "DNB_BRDF-Corrected_NTL"}
         reqs = self.required_products_and_bands
         if reqs:
             for bands in reqs.values():
@@ -55,6 +62,22 @@ class PaperImplementation(ABC):
                     if band in raw_names:
                         return band
         return None
+
+    def _get_band(self, ds: xr.Dataset, band_name: str, catalog: dict) -> xr.DataArray:
+        """
+        Helper method to retrieve a band either from the primary dataset or from
+        an auxiliary dataset provided in the catalog (passed via kwargs).
+        """
+        if band_name in ds.data_vars or band_name in ds.coords:
+            return ds[band_name]
+
+        for cat_ds in catalog.values():
+            if band_name in cat_ds.data_vars or band_name in cat_ds.coords:
+                return cat_ds[band_name]
+
+        raise KeyError(
+            f"Band '{band_name}' not found in the primary dataset or the provided catalog."
+        )
 
     def transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """
@@ -67,12 +90,15 @@ class PaperImplementation(ABC):
             expected = self._get_expected_ntl_name()
             if expected and "ntl" in ds.data_vars:
                 ds = ds.rename({"ntl": expected})
-                
+
         ds = self._transform(ds, **kwargs)
-        
+
         if ds is not None:
+            if isinstance(ds, xr.DataArray):
+                ds = ds.to_dataset(name=self.target_var_name)
+                
             ds = self._standardize_dataset(ds)
-            
+
         return ds
 
     @abstractmethod

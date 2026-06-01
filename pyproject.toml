@@ -3,18 +3,20 @@ name = "blackmarble-ntl-toolkit"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "Jan Kokla", email = "jan.kokla@gmail.com" }
-]
+authors = [{ name = "Jan Kokla", email = "jan.kokla@gmail.com" }]
 requires-python = ">=3.13"
 dependencies = [
     "bottleneck>=1.6.0",
     "dask>=2026.3.0",
     "earthengine-api>=1.7.26",
+    "flox>=0.11.2",
+    "geocube>=0.7.1",
+    "matplotlib>=3.9.0",
     "numpy>=2.4.6",
     "pandas>=3.0.3",
     "pytest>=9.0.3",
     "scipy>=1.17.1",
+    "seaborn>=0.13.0",
     "statsmodels>=0.14.6",
     "xarray>=2026.4.0",
     "xee>=0.1.1",
@@ -29,6 +31,8 @@ packages = ["src/blackmarble_toolkit"]
 
 [dependency-groups]
 dev = [
+    "geemap>=0.37.3",
+    "jupyter>=1.1.1",
     "mkdocstrings-python>=2.0.3",
     "zensical>=0.0.43",
 ]

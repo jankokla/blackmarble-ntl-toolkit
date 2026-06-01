@@ -39,24 +39,23 @@ def get_agg_per_shape(
     variable: str,
     agg_type: Literal["mean", "median"] = "mean",
     is_valid_pct: bool = False,
-    valid_pct_threshold: Optional[float] = None,
+    valid_pct_threshold: float | None = None,
     geo_id_col: str = "geonameid",
 ) -> xr.Dataset:
     """
     Memory-safe aggregation using Dask and Zarr.
 
     Args:
-        ds: The dataset containing the variable to aggregate.
-        mask: The spatial mask dataset containing the geometry IDs.
-        variable: The name of the data variable to aggregate.
-        agg_type: The type of aggregation to perform ('mean' or 'median').
-        is_valid_pct: Whether to calculate the percentage of valid (non-null) pixels.
-        valid_pct_threshold: Optional threshold between 0 and 1. Aggregations with 
-            valid pixel percentage below this threshold will be masked as NaN.
-        geo_id_col: The column name uniquely identifying the shapes.
+        ds: Dataset containing the input variable.
+        mask: Dataset containing the shape mappings.
+        variable: Name of the variable to aggregate.
+        agg_type: Aggregation type to apply ('mean' or 'median'). Defaults to 'mean'.
+        is_valid_pct: Whether to calculate the percentage of non-nan pixels.
+        valid_pct_threshold: Percentage (0-1) below which aggregated values are set to np.nan.
+        geo_id_col: Column name containing shape IDs.
 
     Returns:
-        A dataset containing the spatially aggregated values and optionally the valid percentages.
+        Dataset containing the aggregated spatial values and optionally the percentage of valid pixels.
     """
     x_dim, y_dim = get_spatial_dims(ds)
     ds = ds.assign_coords({geo_id_col: mask[geo_id_col]})
@@ -73,6 +72,7 @@ def get_agg_per_shape(
     output_vars = {variable: agg_da}
 
     if is_valid_pct or valid_pct_threshold is not None:
+        # casting the boolean .notnull() to float makes .mean() calculate the fraction
         valid_pct_da = (
             ds[variable]
             .notnull()
@@ -133,17 +133,16 @@ def aggregate_to_shapes(
     High-level helper to aggregate an xarray dataset to vector shapes.
 
     Args:
-        ds: The input dataset.
+        ds: The xarray Dataset containing the variable to aggregate.
         gdf: The GeoDataFrame containing the vector shapes.
-        variable: The name of the data variable to aggregate.
-        agg_type: The type of aggregation to perform ('mean' or 'median').
-        is_valid_pct: Whether to calculate the percentage of valid pixels.
-        valid_pct_threshold: Optional threshold to mask out geometries with 
-            insufficient valid data.
-        geo_id_col: The column name uniquely identifying the shapes.
+        variable: The variable name to aggregate.
+        agg_type: Aggregation type ('mean' or 'median').
+        is_valid_pct: Whether to calculate the percentage of non-nan pixels.
+        valid_pct_threshold: Percentage (0-1) below which aggregated values are set to np.nan.
+        geo_id_col: The column in the GeoDataFrame identifying the shapes.
 
     Returns:
-        A dataset containing the spatially aggregated values.
+        Dataset containing the aggregated spatial values.
     """
     if variable not in ds.data_vars:
         raise ValueError(f"Variable '{variable}' not found in dataset.")

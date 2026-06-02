@@ -17,9 +17,9 @@ def mock_env():
     """
     temporarily sets the environment variable for testing.
     """
-    os.environ["EE_PROJECT"] = "test-project-123"
+    os.environ["GOOGLE_CLOUD_PROJECT"] = "test-project-123"
     yield
-    del os.environ["EE_PROJECT"]
+    del os.environ["GOOGLE_CLOUD_PROJECT"]
 
 
 class TestGeometryHelpers:
@@ -64,37 +64,21 @@ class TestGeometryHelpers:
 class TestBlackMarbleRetriever:
     """Test the main BlackMarbleRetriever class."""
 
-    @patch("blackmarble_toolkit.retrieval.ee.Initialize")
-    def test_initialization_success(self, mock_initialize, mock_env):
-        """Tests that initialization reads the env var and calls ee.Initialize."""
+    def test_get_data_missing_project(self):
+        """Ensure an error is raised if GOOGLE_CLOUD_PROJECT is missing."""
+        if "GOOGLE_CLOUD_PROJECT" in os.environ:
+            del os.environ["GOOGLE_CLOUD_PROJECT"]
+
         retriever = BlackMarbleRetriever()
-        assert retriever.project_name == "test-project-123"
-        mock_initialize.assert_called_once_with(project="test-project-123")
+        mock_region = MagicMock(spec=ee.Geometry)
 
-    @patch("blackmarble_toolkit.retrieval.ee.Authenticate")
-    @patch("blackmarble_toolkit.retrieval.ee.Initialize")
-    def test_initialization_auth_fallback(
-        self, mock_initialize, mock_authenticate, mock_env
-    ):
-        """Tests that if Initialize fails, it calls Authenticate and retries."""
-        # Raise the real EEException on the first call, then succeed on the second
-        mock_initialize.side_effect = [
-            ee.ee_exception.EEException("Not authenticated"),
-            None,
-        ]
-
-        BlackMarbleRetriever()
-
-        mock_authenticate.assert_called_once()
-        assert mock_initialize.call_count == 2
-
-    def test_initialization_missing_project(self):
-        """Ensure an error is raised if no project is provided or in env."""
-        if "EE_PROJECT" in os.environ:
-            del os.environ["EE_PROJECT"]
-
-        with pytest.raises(ValueError, match="Earth Engine project name not provided"):
-            BlackMarbleRetriever()
+        with pytest.raises(RuntimeError, match="Earth Engine project is not set"):
+            retriever.get_data(
+                product="VNP46A2",
+                start_date="2021-01-01",
+                end_date="2021-02-01",
+                region=mock_region,
+            )
 
     @patch("blackmarble_toolkit.retrieval.xr.open_dataset")
     @patch("blackmarble_toolkit.retrieval.ee.ImageCollection")
@@ -112,13 +96,12 @@ class TestBlackMarbleRetriever:
         mock_ds = xr.Dataset({"DNB_BRDF_Corrected_NTL": xr.DataArray([1, 2, 3])})
         mock_open_dataset.return_value = mock_ds
 
-        with patch("blackmarble_toolkit.retrieval.ee.Initialize"):
-            retriever = BlackMarbleRetriever()
+        retriever = BlackMarbleRetriever()
 
         mock_region = MagicMock(spec=ee.Geometry)
         mock_region.getInfo.return_value = {
             "type": "Polygon",
-            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]],
         }
 
         result_ds = retriever.get_data(
@@ -137,8 +120,7 @@ class TestBlackMarbleRetriever:
 
     def test_get_data_invalid_product(self, mock_env):
         """Ensure requesting an unsupported product raises an error."""
-        with patch("blackmarble_toolkit.retrieval.ee.Initialize"):
-            retriever = BlackMarbleRetriever()
+        retriever = BlackMarbleRetriever()
 
         mock_region = MagicMock(spec=ee.Geometry)
 

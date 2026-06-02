@@ -1,10 +1,10 @@
 [project]
 name = "blackmarble-ntl-toolkit"
 version = "0.1.0"
-description = "Add your description here"
+description = "A Python toolkit for retrieving and preprocessing NASA's Black Marble Nighttime Light (NTL) data using Google Earth Engine, xarray, and Dask."
 readme = "README.md"
 authors = [{ name = "Jan Kokla", email = "jan.kokla@gmail.com" }]
-requires-python = ">=3.13"
+requires-python = ">=3.12"
 dependencies = [
     "bottleneck>=1.6.0",
     "dask>=2026.3.0",
@@ -34,5 +34,7 @@ dev = [
     "geemap>=0.37.3",
     "jupyter>=1.1.1",
     "mkdocstrings-python>=2.0.3",
+    "pre-commit>=4.6.0",
+    "ruff>=0.15.15",
     "zensical>=0.0.43",
 ]

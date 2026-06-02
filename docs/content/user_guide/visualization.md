@@ -16,7 +16,7 @@ The easiest way to plot your results is to use the `.plot()` method directly on 
 import matplotlib.pyplot as plt
 
 # Assuming you have already run aggregate() on your pipeline:
-# aggregated_results = pipeline.aggregate(track_geometries=regions)
+# aggregated_results = pipeline.aggregate(gdf=regions)
 
 fig = pipeline.plot(
     variable="ntl",

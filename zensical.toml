@@ -10,6 +10,7 @@ nav = [
     "content/get_started/index.md",
     { "Installation" = "content/get_started/installation.md" },
     { "Google Earth Engine" = "content/get_started/gee.md" },
+    { "Using Dask" = "content/get_started/dask.md" },
   ] },
   { "User Guide" = [
     "content/user_guide/index.md",
@@ -17,6 +18,7 @@ nav = [
     { "Preprocessing" = "content/user_guide/preprocessing.md" },
     { "Aggregation" = "content/user_guide/aggregation.md" },
     { "Visualization" = "content/user_guide/visualization.md" },
+    { "Exporting" = "content/user_guide/export.md" },
   ] },
   { "API Reference" = [
     "content/api_reference/index.md",

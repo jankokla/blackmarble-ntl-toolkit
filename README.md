@@ -41,12 +41,12 @@ Create a robust, memory-efficient pipeline leveraging Dask and Xarray to filter 
 
 ```python
 from blackmarble_toolkit.pipeline import NTLPipeline
-from blackmarble_toolkit.methods import filters, angular, misc, imputation
+from blackmarble_toolkit.methods import filters, angular, geometric, imputation
 
 steps = [
     filters.CloudSnowFilter(),
     angular.QuadraticVZACorrection(),
-    misc.AveragePooling2D(window_size=3),
+    geometric.AveragePooling2D(filter_size=(3, 3)),
     imputation.LinearInterpolationGapFilling()
 ]
 
@@ -64,9 +64,17 @@ regions = gpd.read_file("regions.geojson")
 regions = regions.reset_index(names="region_id")
 
 aggregated_results = pipeline.aggregate(
-    track_geometries=regions,
+    gdf=regions,
     geo_id_col="region_id"
 )
+```
+
+### 4. Exporting to CSV
+
+If you prefer doing downstream analysis and plotting in pandas or R, you can easily export the aggregated results to a CSV file.
+
+```python
+df = pipeline.to_csv("ntl_aggregated_results.csv")
 ```
 
 ## 🛠️ Installation

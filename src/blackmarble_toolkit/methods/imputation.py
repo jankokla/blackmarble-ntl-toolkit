@@ -44,4 +44,4 @@ class LinearInterpolationGapFilling(PaperImplementation):
         Returns:
             The gap-filled Dataset or DataArray.
         """
-        return ds[["DNB_BRDF_Corrected_NTL"]].interpolate_na(dim="time", method="linear")
+        return ds[[self.target_var_name]].interpolate_na(dim="time", method="linear")

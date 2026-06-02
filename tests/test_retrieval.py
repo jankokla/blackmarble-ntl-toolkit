@@ -71,7 +71,7 @@ class TestBlackMarbleRetriever:
 
         retriever = BlackMarbleRetriever()
         mock_region = MagicMock(spec=ee.Geometry)
-        
+
         with pytest.raises(RuntimeError, match="Earth Engine project is not set"):
             retriever.get_data(
                 product="VNP46A2",
@@ -101,7 +101,7 @@ class TestBlackMarbleRetriever:
         mock_region = MagicMock(spec=ee.Geometry)
         mock_region.getInfo.return_value = {
             "type": "Polygon",
-            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]
+            "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]],
         }
 
         result_ds = retriever.get_data(

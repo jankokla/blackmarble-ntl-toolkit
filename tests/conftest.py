@@ -59,20 +59,21 @@ def synthetic_catalog(array_backend: str) -> Dict[str, xr.Dataset]:
 
     return {"VNP46A2": mask_ds}
 
+
 @pytest.fixture
 def mock_vnp46a2_dataset() -> xr.Dataset:
     times = pd.date_range("2022-01-01", periods=1)
-    
+
     ntl = np.arange(9, dtype=np.float32).reshape((1, 3, 3))
-    
+
     qf = np.zeros((1, 3, 3), dtype=np.uint16)
     qf[0, 1, 1] = 128
-    
+
     mqf = np.zeros((1, 3, 3), dtype=np.uint8)
     mqf[0, 0, 0] = 1
-    
+
     snow_flag = np.zeros((1, 3, 3), dtype=np.uint8)
-    
+
     moon = np.full((1, 3, 3), 50.0, dtype=np.float32)
 
     ds = xr.Dataset(
@@ -83,18 +84,15 @@ def mock_vnp46a2_dataset() -> xr.Dataset:
             "Snow_Flag": (["time", "y", "x"], snow_flag),
             "DNB_Lunar_Irradiance": (["time", "y", "x"], moon),
         },
-        coords={
-            "time": times,
-            "y": [10, 20, 30],
-            "x": [100, 110, 120]
-        }
+        coords={"time": times, "y": [10, 20, 30], "x": [100, 110, 120]},
     )
     return ds
+
 
 @pytest.fixture
 def mock_vnp46a1_dataset() -> xr.Dataset:
     times = pd.date_range("2022-01-01", periods=1)
-    
+
     sensor_z = np.full((1, 3, 3), 1000.0, dtype=np.float32)
     sensor_a = np.full((1, 3, 3), 2000.0, dtype=np.float32)
     solar_z = np.full((1, 3, 3), 11000.0, dtype=np.float32)
@@ -107,10 +105,6 @@ def mock_vnp46a1_dataset() -> xr.Dataset:
             "Solar_Zenith": (["time", "y", "x"], solar_z),
             "Moon_Illumination_Fraction": (["time", "y", "x"], moon_frac),
         },
-        coords={
-            "time": times,
-            "y": [10, 20, 30],
-            "x": [100, 110, 120]
-        }
+        coords={"time": times, "y": [10, 20, 30], "x": [100, 110, 120]},
     )
     return ds

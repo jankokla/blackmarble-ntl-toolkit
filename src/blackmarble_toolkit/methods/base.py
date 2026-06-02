@@ -13,7 +13,7 @@ class PaperImplementation(ABC):
     Focuses on declaring data dependencies and applying scientific transformations.
     """
 
-    # Note: Google Earth Engine uses "DNB_BRDF_Corrected_NTL", 
+    # Note: Google Earth Engine uses "DNB_BRDF_Corrected_NTL",
     # whereas blackmarblepy uses "DNB_BRDF-Corrected_NTL".
     target_var_name = "DNB_BRDF_Corrected_NTL"
 
@@ -96,7 +96,7 @@ class PaperImplementation(ABC):
         if ds is not None:
             if isinstance(ds, xr.DataArray):
                 ds = ds.to_dataset(name=self.target_var_name)
-                
+
             ds = self._standardize_dataset(ds)
 
         return ds
@@ -135,9 +135,9 @@ class PaperImplementation(ABC):
             size[ax_y] = w_y
             size[ax_x] = w_x
 
-            sum_filled = uniform_filter(filled, size=size, mode="constant", cval=0.0) * (
-                w_y * w_x
-            )
+            sum_filled = uniform_filter(
+                filled, size=size, mode="constant", cval=0.0
+            ) * (w_y * w_x)
             count_valid = uniform_filter(
                 valid.astype(float), size=size, mode="constant", cval=0.0
             ) * (w_y * w_x)

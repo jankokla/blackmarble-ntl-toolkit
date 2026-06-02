@@ -152,7 +152,7 @@ class NTLPipeline:
 
         mask_var = "ntl" if "ntl" in first_ds.data_vars else "DNB_BRDF_Corrected_NTL"
         if mask_var not in first_ds.data_vars:
-            raise ValueError(f"Expected NTL variable not found in the dataset.")
+            raise ValueError("Expected NTL variable not found in the dataset.")
 
         # create mask once to avoid repeating expensive rasterizations
         mask = get_gdf_mask_for_ds(first_ds[[mask_var]], gdf, geo_id_col=geo_id_col)

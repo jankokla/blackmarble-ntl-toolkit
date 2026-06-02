@@ -56,7 +56,9 @@ def plot_multiple_timeseries(
             da = da.sel(time=slice(start_date, end_date))
 
         if indexers:
-            valid_indexers = {k: v for k, v in indexers.items() if k in da.dims or k in da.coords}
+            valid_indexers = {
+                k: v for k, v in indexers.items() if k in da.dims or k in da.coords
+            }
             if valid_indexers:
                 try:
                     da = da.sel(valid_indexers)
@@ -161,7 +163,9 @@ def plot_multiple_timeseries(
 
             if start_date or end_date:
                 # If explicit bounds are provided, enforce them
-                s_date = pd.to_datetime(start_date) if start_date else series.index.min()
+                s_date = (
+                    pd.to_datetime(start_date) if start_date else series.index.min()
+                )
                 e_date = pd.to_datetime(end_date) if end_date else series.index.max()
                 ax.set_xlim(s_date, e_date)
 

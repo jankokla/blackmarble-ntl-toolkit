@@ -69,6 +69,14 @@ aggregated_results = pipeline.aggregate(
 )
 ```
 
+### 4. Exporting to CSV
+
+If you prefer doing downstream analysis and plotting in pandas or R, you can easily export the aggregated results to a CSV file.
+
+```python
+df = pipeline.to_csv("ntl_aggregated_results.csv")
+```
+
 ## 🛠️ Installation
 
 You can install the toolkit directly via PyPI:

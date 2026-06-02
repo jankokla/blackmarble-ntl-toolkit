@@ -90,6 +90,23 @@ class NTLPipeline:
             self._intermediates.append(current_ds.assign_attrs(step="Raw"))
 
         for step in self.steps:
+            # re-inject missing required variables from the original ds
+            reqs = step.required_products_and_bands
+            if reqs:
+                for product, bands in reqs.items():
+                    for band in bands:
+                        # skip target variables as they are carried forward and renamed
+                        if band not in [
+                            "DNB_BRDF_Corrected_NTL",
+                            "DNB_BRDF-Corrected_NTL",
+                            "ntl",
+                        ]:
+                            if (
+                                band not in current_ds.data_vars
+                                and band in ds.data_vars
+                            ):
+                                current_ds = current_ds.assign({band: ds[band]})
+
             current_ds = step.transform(current_ds, **catalog)
 
             step_name = str(step)

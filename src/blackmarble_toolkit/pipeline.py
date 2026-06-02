@@ -120,7 +120,7 @@ class NTLPipeline:
 
     def aggregate(
         self,
-        gdf: gpd.GeoDataFrame,
+        gdf: gpd.GeoDataFrame | pd.DataFrame,
         geo_id_col: str = "geonameid",
         is_valid_pct: bool = False,
         compute: bool = False,

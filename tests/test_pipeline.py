@@ -64,3 +64,18 @@ def test_pipeline_run(
     assert history[0]["step"] == "DummyTransformation"
     assert history[1]["step"] == "DummyTransformation2"
     assert history[1]["params"] == {"threshold": 10}
+
+
+def test_pipeline_cache_intermediates(
+    synthetic_dataset: xr.Dataset, synthetic_catalog: Dict[str, xr.Dataset]
+) -> None:
+    pipeline = NTLPipeline([DummyTransformation(), DummyTransformation2()])
+    
+    pipeline.run(synthetic_dataset, synthetic_catalog, cache_intermediates=True)
+    
+    # 2 steps + initial standardized dataset = 3 intermediates
+    assert len(pipeline._intermediates) == 3
+    assert pipeline._intermediates[0].attrs.get("step") == "Raw"
+    assert pipeline._intermediates[1].attrs.get("step") == "DummyTransformation"
+    assert pipeline._intermediates[2].attrs.get("step") == "DummyTransformation2"
+

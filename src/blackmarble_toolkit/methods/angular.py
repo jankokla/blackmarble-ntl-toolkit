@@ -184,7 +184,7 @@ class Hu2024AngularCorrection(PaperImplementation):
             The corrected NTL Dataset.
         """
         ntl = ds[self.target_var_name]
-        annual = self._get_band(ds, "average", kwargs)
+        annual = self._get_band(ds, "average", kwargs, align_time=False)
 
         # group all the days of a year into 16 groups according to the daily vza.
         # since snpp repeats every 16 days, group by day modulo 16.

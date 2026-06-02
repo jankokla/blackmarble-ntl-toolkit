@@ -66,7 +66,7 @@ Under the hood, the pipeline uses `geocube` to rasterize your vector shapes onto
 1. **`get_gdf_mask_for_ds`**: Creates a spatial mask aligning the `GeoDataFrame` to the grid of the `xarray.Dataset`.
 2. **`get_agg_per_shape`**: Groups the data by the geometry ID and performs a memory-safe aggregation using Dask.
 
-By default, the pipeline computes both the **mean** radiance value and the **valid pixel percentage** (`valid_pct`) for every shape at each time step. The valid pixel percentage helps you identify shapes where too many pixels were masked out (e.g., due to heavy cloud cover or snow), ensuring you can filter out statistically unreliable aggregations downstream.
+By default, the pipeline computes the **mean** radiance value for every shape at each time step. You can also opt-in to calculate the **valid pixel percentage** (`valid_pct`) by setting `is_valid_pct=True`. This metric helps you identify shapes where too many pixels were masked out (e.g., due to heavy cloud cover or snow), ensuring you can filter out statistically unreliable aggregations downstream.
 
 ## API Reference
 

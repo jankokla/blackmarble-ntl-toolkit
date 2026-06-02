@@ -18,6 +18,7 @@ nav = [
     { "Preprocessing" = "content/user_guide/preprocessing.md" },
     { "Aggregation" = "content/user_guide/aggregation.md" },
     { "Visualization" = "content/user_guide/visualization.md" },
+    { "Exporting" = "content/user_guide/export.md" },
   ] },
   { "API Reference" = [
     "content/api_reference/index.md",

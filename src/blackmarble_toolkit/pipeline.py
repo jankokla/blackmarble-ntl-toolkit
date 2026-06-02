@@ -1,9 +1,11 @@
 import json
 import logging
+from pathlib import Path
 from typing import List, Optional
 
 import dask
 import geopandas as gpd
+import pandas as pd
 import xarray as xr
 
 from blackmarble_toolkit.aggregation import get_agg_per_shape, get_gdf_mask_for_ds
@@ -120,6 +122,7 @@ class NTLPipeline:
         self,
         gdf: gpd.GeoDataFrame,
         geo_id_col: str = "geonameid",
+        is_valid_pct: bool = False,
         compute: bool = False,
     ) -> List[xr.Dataset]:
         """
@@ -128,6 +131,7 @@ class NTLPipeline:
         Args:
             gdf: GeoDataFrame containing the regions to aggregate over.
             geo_id_col: The column name in the GeoDataFrame that uniquely identifies each shape.
+            is_valid_pct: Whether to calculate the percentage of non-nan pixels. Defaults to False.
             compute: If True, evaluates the Dask computation graph for all aggregated
                      datasets and pulls the results into memory. Defaults to False.
 
@@ -169,7 +173,7 @@ class NTLPipeline:
                 mask,
                 step_var,
                 agg_type="mean",
-                is_valid_pct=True,
+                is_valid_pct=is_valid_pct,
                 geo_id_col=geo_id_col,
             )
 
@@ -232,3 +236,38 @@ class NTLPipeline:
             font_scale=font_scale,
             moving_average=moving_average,
         )
+
+    def to_csv(
+        self,
+        file_path: Optional[str | Path] = None,
+    ) -> pd.DataFrame:
+        """
+        Convert the aggregated pipeline results into a long-format pandas DataFrame
+        and optionally save it to a CSV file.
+
+        Args:
+            file_path: Optional path to save the CSV. If None, just return the DataFrame.
+
+        Returns:
+            A pandas DataFrame containing the aggregated data across all regions
+            and preprocessing steps.
+        """
+        if not self._aggregated_ds:
+            raise ValueError("No aggregated data available. Run aggregate() first.")
+
+        dfs = []
+        for step_idx, ds in enumerate(self._aggregated_ds):
+            df = ds.to_dataframe().reset_index()
+
+            # Move step tracking columns to the front after time and geo_id
+            df["step_index"] = step_idx
+            df["step"] = ds.attrs.get("step", "unknown")
+
+            dfs.append(df)
+
+        master_df = pd.concat(dfs, ignore_index=True)
+
+        if file_path is not None:
+            master_df.to_csv(file_path, index=False)
+
+        return master_df

@@ -1,5 +1,9 @@
 import os
+
 import ee
+import geopandas as gpd
+import numpy as np
+from scipy.cluster.hierarchy import fcluster, linkage
 
 
 def initialize_ee(project_name: str | None = None) -> None:
@@ -23,3 +27,33 @@ def initialize_ee(project_name: str | None = None) -> None:
     except ee.ee_exception.EEException:
         ee.Authenticate()
         ee.Initialize(project=project)
+
+
+def cluster_geometries(
+    gdf: gpd.GeoDataFrame, max_distance_deg: float = 2.0
+) -> gpd.GeoDataFrame:
+    """
+    Cluster geometries in a GeoDataFrame based on their distance.
+
+    Args:
+        gdf: GeoDataFrame containing the shapes to cluster.
+        max_distance_deg: Maximum separation distance to belong to the same cluster (in degrees).
+
+    Returns:
+        A copy of the GeoDataFrame with an assigned 'cluster_id' column.
+    """
+    if len(gdf) <= 1:
+        gdf_clustered = gdf.copy()
+        gdf_clustered["cluster_id"] = [1] * len(gdf)
+        return gdf_clustered
+
+    centroids = gdf.geometry.centroid
+    coords = np.column_stack((centroids.x, centroids.y))
+
+    Z = linkage(coords, method="single", metric="euclidean")
+
+    labels = fcluster(Z, t=max_distance_deg, criterion="distance")
+
+    gdf_clustered = gdf.copy()
+    gdf_clustered["cluster_id"] = labels
+    return gdf_clustered

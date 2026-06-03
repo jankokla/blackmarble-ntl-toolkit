@@ -1,9 +1,11 @@
 import argparse
 import logging
+import os
 import sys
 
 from dask.distributed import Client
 
+from blackmarble_toolkit.utils import initialize_ee
 from blackmarble_toolkit.workflows import (
     aggregate_workflow,
     download_workflow,
@@ -15,11 +17,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+logging.getLogger("urllib3.connectionpool").setLevel(logging.ERROR)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Black Marble NTL Toolkit CLI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+
+    # GLOBAL
+    parser.add_argument(
+        "--ee-project",
+        type=str,
+        help="Earth Engine project name (overrides GOOGLE_CLOUD_PROJECT env var)",
     )
 
     subparsers = parser.add_subparsers(
@@ -148,10 +159,16 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if args.ee_project:
+        os.environ["GOOGLE_CLOUD_PROJECT"] = args.ee_project
+
     client = Client()
     logger.info(
         f"Dask distributed client initialized. Dashboard URL: {client.dashboard_link}"
     )
+
+    logger.info("Initializing Earth Engine...")
+    initialize_ee()
 
     try:
         if args.command == "download":

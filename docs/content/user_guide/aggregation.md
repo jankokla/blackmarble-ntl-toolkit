@@ -23,7 +23,7 @@ processed_ds = pipeline.run(ds=raw_ds, cache_intermediates=True) # (1)!
 gdf = gpd.read_file("path/to/regions.geojson") # (2)! 
 
 # Create a numeric ID for the vector shapes so rasterization works
-gdf['numeric_id'] = range(len(gdf)) # (3)! 
+gdf = gdf.reset_index(names="numeric_id") # (3)! 
 
 aggregated_results = pipeline.aggregate( 
     gdf=gdf, # (4)! 
@@ -34,14 +34,14 @@ aggregated_results = pipeline.aggregate(
 
 1. Run the pipeline, caching the intermediate results
 2. Load your vector shapes (e.g., administrative boundaries)
-3. Under the hood, spatial aggregation requires rasterization which ONLY supports numeric IDs.
+3. Under the hood, spatial aggregation requires rasterization which ONLY supports numeric IDs. Using `reset_index` is the simplest way to generate a numeric column from the existing index.
 4. The GeoDataFrame containing the regions
 5. The specific numeric column identifier
 6. Force parallel execution of the Dask graph so all datasets are materialized immediately
 
 !!! tip "String IDs and Mapping"
 
-    Because the underlying rasterization tool (`make_geocube`) requires numeric identifiers to build spatial masks, you cannot pass string columns (like names of cities) directly to `geo_id_col`. The best practice is to assign an integer index, perform the aggregation, and optionally rename the IDs back to strings after the results are returned!
+    As the underlying rasterization tool (`make_geocube`) requires numeric identifiers to build spatial masks, you cannot pass string columns (like names of cities) directly to `geo_id_col`. The simplest and best practice is to use `gdf = gdf.reset_index(names="numeric_id")` to assign an integer index column, perform the aggregation using that column, and then merge the string columns back using the index after the results are returned!
 
 ### Intermediate vs. Final Results
 

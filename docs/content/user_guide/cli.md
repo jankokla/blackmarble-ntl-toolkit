@@ -20,7 +20,19 @@ blackmarble download \
     --start-date 2023-01-01 \
     --end-date 2023-01-31 \
     --region path/to/districts.geojson \
-    --out raw.zarr
+    --out raw_vnp46a2.zarr
+```
+
+If a preprocessing step requires an auxiliary catalog (like the `QuadraticVZACorrection` which requires the `Sensor_Zenith` band from the `VNP46A1` product), you can use the `--bands` argument to only download the data you specifically need:
+
+```bash
+blackmarble download \
+    --product VNP46A1 \
+    --start-date 2023-01-01 \
+    --end-date 2023-01-31 \
+    --region path/to/districts.geojson \
+    --bands Sensor_Zenith \
+    --out auxiliary_vnp46a1.zarr
 ```
 
 **Arguments:**
@@ -30,7 +42,7 @@ blackmarble download \
 - `--end-date`: End date (YYYY-MM-DD).
 - `--region`: Path to a GeoJSON or Shapefile defining the spatial bounds.
 - `--out`: Output Zarr store path.
-- `--bands`: (Optional) List of specific bands to retrieve.
+- `--bands`: (Optional) List of specific bands to retrieve, separated by spaces (e.g., `--bands Sensor_Zenith Sensor_Azimuth`).
 - `--scale`: (Optional) Spatial resolution in degrees.
 - `--chunks`: (Optional) Chunking scheme (defaults to `auto`).
 
@@ -53,9 +65,12 @@ blackmarble preprocess \
 
 **Configuration File Example:**
 
-The configuration file dictates the exact `NTLPipeline` steps and their parameters:
+The configuration file dictates the exact `NTLPipeline` steps and their parameters. It can also define auxiliary datasets (catalogs) required by specific steps.
 
 ```yaml
+catalog:
+  VNP46A1: "path/to/auxiliary_vnp46a1.zarr"
+
 steps:
   - filters.CloudSnowFilter: {}
   - angular.QuadraticVZACorrection: {}

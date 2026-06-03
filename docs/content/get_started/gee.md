@@ -32,6 +32,12 @@ Alternatively, you can export it directly in your terminal:
 export GOOGLE_CLOUD_PROJECT="your-google-cloud-project-id"
 ```
 
+!!! warning "Important: Use the `export` keyword"
+
+    If you set the environment variable in your terminal before running the CLI, you **must** use the `export` keyword. If you omit it (i.e. `GOOGLE_CLOUD_PROJECT="my-project"`), the variable remains local to your shell and will **not** be passed to the Python subprocess, resulting in an "Earth Engine project name not provided" error.
+    
+    Alternatively, you can pass the project directly to the CLI using the `--ee-project` flag.
+
 ### In Python
 
 You can also specify it in your python script:

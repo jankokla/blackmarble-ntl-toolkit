@@ -1,3 +1,4 @@
+import importlib
 import json
 import logging
 from typing import Any, List, Optional
@@ -7,7 +8,8 @@ import xarray as xr
 import yaml
 
 from blackmarble_toolkit.pipeline import NTLPipeline
-from blackmarble_toolkit.retrieval import BlackMarbleRetriever
+from blackmarble_toolkit.retrieval import BlackMarbleRetriever, gdf_to_geometry
+from blackmarble_toolkit.utils import enforce_zarr_chunk_uniformity
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +30,6 @@ def download_workflow(
     logger.info(f"Loading region from {region_file}...")
     gdf = gpd.read_file(region_file)
 
-    # Use the combined geometry of the GeoDataFrame
-    from blackmarble_toolkit.retrieval import gdf_to_geometry
-
     region_geom = gdf_to_geometry(gdf)
 
     logger.info(f"Retrieving data for {product} from {start_date} to {end_date}...")
@@ -45,8 +44,10 @@ def download_workflow(
         chunks=chunks,
     )
 
-    logger.info(f"Writing uncomputed lazy dataset to {out_zarr}...")
-    ds.to_zarr(out_zarr, compute=False)
+    ds = enforce_zarr_chunk_uniformity(ds, chunks)
+
+    logger.info(f"Writing dataset to {out_zarr}...")
+    ds.to_zarr(out_zarr, compute=True)
     logger.info(
         "Download workflow completed successfully. Data is ready for preprocessing."
     )
@@ -54,8 +55,6 @@ def download_workflow(
 
 def _load_steps_from_config(config_path: str) -> List[Any]:
     """Dynamically load processing steps based on a YAML/JSON configuration."""
-    import importlib
-
     with open(config_path, "r") as f:
         if config_path.endswith(".json"):
             config = json.load(f)
@@ -65,8 +64,6 @@ def _load_steps_from_config(config_path: str) -> List[Any]:
     steps_config = config.get("steps", [])
     steps = []
 
-    steps_module = importlib.import_module("blackmarble_toolkit.steps")
-
     for step_cfg in steps_config:
         if isinstance(step_cfg, str):
             step_name = step_cfg
@@ -75,7 +72,14 @@ def _load_steps_from_config(config_path: str) -> List[Any]:
             step_name = list(step_cfg.keys())[0]
             params = step_cfg[step_name] or {}
 
-        step_class = getattr(steps_module, step_name)
+        parts = step_name.split(".")
+        submodule_path = ".".join(parts[:-1])
+        class_name = parts[-1]
+        module = importlib.import_module(
+            f"blackmarble_toolkit.methods.{submodule_path}"
+        )
+
+        step_class = getattr(module, class_name)
         steps.append(step_class(**params))
 
     return steps
@@ -92,14 +96,26 @@ def preprocess_workflow(
     logger.info(f"Loading raw data from {input_zarr}...")
     ds = xr.open_zarr(input_zarr)
 
-    logger.info(f"Loading pipeline steps from {config_file}...")
-    steps = _load_steps_from_config(config_file)
+    logger.info(f"Loading pipeline configuration from {config_file}...")
+    with open(config_file, "r") as f:
+        if config_file.endswith(".json"):
+            config = json.load(f)
+        else:
+            config = yaml.safe_load(f)
 
+    steps = _load_steps_from_config(config_file)
     pipeline = NTLPipeline(steps=steps)
 
+    catalog_config = config.get("catalog", {})
+    catalog = {}
+    if catalog_config:
+        logger.info("Loading auxiliary catalogs...")
+        for cat_name, cat_path in catalog_config.items():
+            logger.info(f"  - {cat_name}: {cat_path}")
+            catalog[cat_name] = xr.open_zarr(cat_path)
+
     logger.info("Running preprocessing pipeline...")
-    # Compute happens when saving to Zarr
-    preprocessed_ds = pipeline.run(ds, cache_intermediates=False)
+    preprocessed_ds = pipeline.run(ds, catalog=catalog, cache_intermediates=False)
 
     logger.info(f"Writing preprocessed dataset to {out_zarr}...")
     preprocessed_ds.to_zarr(out_zarr, compute=True)

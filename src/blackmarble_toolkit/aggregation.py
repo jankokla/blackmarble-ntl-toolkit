@@ -1,6 +1,7 @@
 from typing import Literal, Optional, Tuple, Union
 
 import geopandas as gpd
+import pandas as pd
 import xarray as xr
 from geocube.api.core import make_geocube
 
@@ -93,7 +94,7 @@ def get_agg_per_shape(
 
 
 def get_gdf_mask_for_ds(
-    ds: xr.Dataset, gdf: gpd.GeoDataFrame, geo_id_col: str = "geonameid"
+    ds: xr.Dataset, gdf: gpd.GeoDataFrame | pd.DataFrame, geo_id_col: str = "geonameid"
 ) -> xr.Dataset:
     """
     Creates a spatial mask for an xarray Dataset based on a given GeoDataFrame.
@@ -122,7 +123,7 @@ def get_gdf_mask_for_ds(
 
 def aggregate_to_shapes(
     ds: xr.Dataset,
-    gdf: gpd.GeoDataFrame,
+    gdf: gpd.GeoDataFrame | pd.DataFrame,
     variable: str = "DNB_BRDF-Corrected_NTL",
     agg_type: Literal["mean", "median"] = "mean",
     is_valid_pct: bool = False,

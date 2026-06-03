@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Literal, Tuple
 
 import ee
 import geopandas as gpd
+import pandas as pd
 import shapely.geometry
 import xarray as xr
 from shapely.geometry import shape
@@ -136,6 +137,41 @@ class BlackMarbleRetriever:
 
     _NATIVE_SCALE_DEGREES = 15.0 / 3600.0
 
+    _PRODUCT_AVAILABILITY = {
+        "VNP46A1": ("2012-01-19", "2025-01-02"),
+        "VNP46A2": ("2012-01-19", None),
+        "NOAA/VIIRS/DNB/ANNUAL_V22": ("2012-04-01", "2025-01-01"),
+    }
+
+    def _check_dataset_availability(
+        self, product: str, start_date: str, end_date: str
+    ) -> None:
+        """Check if the requested dates fall within the known available dataset range."""
+        if product not in self._PRODUCT_AVAILABILITY:
+            return
+
+        avail_start, avail_end = self._PRODUCT_AVAILABILITY[product]
+
+        try:
+            start_dt = pd.to_datetime(start_date, utc=True)
+            end_dt = pd.to_datetime(end_date, utc=True)
+
+            avail_start_dt = pd.to_datetime(avail_start, utc=True)
+            avail_end_dt = (
+                pd.to_datetime(avail_end, utc=True)
+                if avail_end
+                else pd.Timestamp.now(tz="UTC")
+            )
+
+            if start_dt < avail_start_dt or end_dt > avail_end_dt:
+                end_str = avail_end if avail_end else "present"
+                warnings.warn(
+                    f"{product} data is generally available from {avail_start} to {end_str}.",
+                    UserWarning,
+                )
+        except Exception:
+            pass
+
     def get_data(
         self,
         product: Literal["VNP46A1", "VNP46A2", "NOAA/VIIRS/DNB/ANNUAL_V22"],
@@ -163,6 +199,8 @@ class BlackMarbleRetriever:
         """
         if product not in self._PRODUCT_CATALOG:
             raise ValueError(f"Product '{product}' is not supported.")
+
+        self._check_dataset_availability(product, start_date, end_date)
 
         if not os.environ.get("GOOGLE_CLOUD_PROJECT"):
             raise RuntimeError(

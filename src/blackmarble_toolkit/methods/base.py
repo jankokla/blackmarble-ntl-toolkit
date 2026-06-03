@@ -63,21 +63,32 @@ class PaperImplementation(ABC):
                         return band
         return None
 
-    def _get_band(self, ds: xr.Dataset, band_name: str, catalog: dict) -> xr.DataArray:
+    def _get_band(
+        self, ds: xr.Dataset, band_name: str, catalog: dict, align_time: bool = True
+    ) -> xr.DataArray:
         """
         Helper method to retrieve a band either from the primary dataset or from
         an auxiliary dataset provided in the catalog (passed via kwargs).
+        Ensures temporal alignment with the primary dataset if applicable.
         """
+        result = None
         if band_name in ds.data_vars or band_name in ds.coords:
-            return ds[band_name]
+            result = ds[band_name]
+        else:
+            for cat_ds in catalog.values():
+                if band_name in cat_ds.data_vars or band_name in cat_ds.coords:
+                    result = cat_ds[band_name]
+                    break
 
-        for cat_ds in catalog.values():
-            if band_name in cat_ds.data_vars or band_name in cat_ds.coords:
-                return cat_ds[band_name]
+        if result is None:
+            raise KeyError(
+                f"Band '{band_name}' not found in the primary dataset or the provided catalog."
+            )
 
-        raise KeyError(
-            f"Band '{band_name}' not found in the primary dataset or the provided catalog."
-        )
+        if align_time and "time" in ds.dims and "time" in result.dims:
+            result = result.reindex(time=ds.time)
+
+        return result
 
     def transform(self, ds: xr.Dataset, **kwargs) -> xr.Dataset:
         """

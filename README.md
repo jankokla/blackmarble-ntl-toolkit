@@ -77,6 +77,50 @@ If you prefer doing downstream analysis and plotting in pandas or R, you can eas
 df = pipeline.to_csv("ntl_aggregated_results.csv")
 ```
 
+## 🖥️ Command Line Interface (CLI)
+
+The toolkit provides a powerful CLI designed for batch processing large regions by utilizing out-of-core computation and saving intermediate states as Zarr stores.
+
+### 1. Download Data
+
+Download Black Marble data for a specific region and time period and save it lazily to a Zarr store.
+```bash
+blackmarble download \
+    --product VNP46A2 \
+    --start-date 2023-01-01 \
+    --end-date 2023-01-31 \
+    --region path/to/districts.geojson \
+    --out raw.zarr
+```
+
+### 2. Preprocess Data
+
+Run a series of preprocessing steps (defined in a YAML/JSON configuration file) over the raw Zarr store.
+```bash
+blackmarble preprocess \
+    --input raw.zarr \
+    --config pipeline_config.yaml \
+    --out preprocessed.zarr
+```
+*Example `pipeline_config.yaml`:*
+```yaml
+steps:
+  - filters.CloudSnowFilter: {}
+  - imputation.LinearInterpolationGapFilling: {}
+```
+
+### 3. Aggregate Data
+
+Perform zonal statistics over your vector geometries and export to Zarr/CSV.
+```bash
+blackmarble aggregate \
+    --input preprocessed.zarr \
+    --region path/to/districts.geojson \
+    --geo-id district_id \
+    --out-zarr aggregated.zarr \
+    --out-csv aggregated.csv
+```
+
 ## 🛠️ Installation
 
 You can install the toolkit directly via PyPI:

@@ -19,6 +19,7 @@ nav = [
     { "Aggregation" = "content/user_guide/aggregation.md" },
     { "Visualization" = "content/user_guide/visualization.md" },
     { "Exporting" = "content/user_guide/export.md" },
+    { "CLI" = "content/user_guide/cli.md" },
   ] },
   { "API Reference" = [
     "content/api_reference/index.md",

@@ -173,7 +173,7 @@ wheels = [
 
 [[package]]
 name = "blackmarble-ntl-toolkit"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "bottleneck" },
@@ -187,6 +187,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pytest" },
+    { name = "pyyaml" },
     { name = "scipy" },
     { name = "seaborn" },
     { name = "statsmodels" },
@@ -217,6 +218,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.4.6" },
     { name = "pandas", specifier = ">=3.0.3" },
     { name = "pytest", specifier = ">=9.0.3" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "scipy", specifier = ">=1.17.1" },
     { name = "seaborn", specifier = ">=0.13.0" },
     { name = "statsmodels", specifier = ">=0.14.6" },

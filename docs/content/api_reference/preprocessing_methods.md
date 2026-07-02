@@ -4,6 +4,8 @@ icon: lucide/layout-list
 
 # Preprocessing Methods
 
+For a summary of all available preprocessing methods and the satellite products and bands they require, see the [Required Products & Bands](../user_guide/required_bands.md) page.
+
 ::: blackmarble_toolkit.methods.base.PaperImplementation
     options:
       heading_level: 3

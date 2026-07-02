@@ -105,6 +105,10 @@ processed_ds = pipeline.run(ds_a2, catalog=catalog)
 
 The toolkit provides several categories of preprocessing methods, many of which implement algorithms from published remote sensing literature.
 
+!!! note
+
+    For a summary of the satellite products and bands required by each method, see the [Required Products & Bands](required_bands.md) page.
+
 ### Filters
 
 Filters are used to remove low-quality observations, clouds, snow, or outliers from the dataset.

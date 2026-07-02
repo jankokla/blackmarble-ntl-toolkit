@@ -16,6 +16,7 @@ nav = [
     "content/user_guide/index.md",
     { "Data Retrieval" = "content/user_guide/data_retrieval.md" },
     { "Preprocessing" = "content/user_guide/preprocessing.md" },
+    { "Required Bands" = "content/user_guide/required_bands.md" },
     { "Aggregation" = "content/user_guide/aggregation.md" },
     { "Visualization" = "content/user_guide/visualization.md" },
     { "Exporting" = "content/user_guide/export.md" },

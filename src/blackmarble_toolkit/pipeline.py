@@ -1,7 +1,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 import dask
 import geopandas as gpd
@@ -16,14 +16,14 @@ logger = logging.getLogger(__name__)
 class NTLPipeline:
     """Orchestrate the sequential execution of NTL transformations."""
 
-    def __init__(self, steps):
+    def __init__(self, steps: Optional[List[Any]] = None):
         """
         Initialize the pipeline with a sequence of processing steps.
 
         Args:
-            steps: A list of instantiated processing step objects.
+            steps: A list of instantiated processing step objects. Defaults to None.
         """
-        self.steps = steps
+        self.steps = steps if steps is not None else []
         self._preprocessed_ds = None
         self._intermediates: List[xr.Dataset] = []
         self._aggregated_ds: Optional[List[xr.Dataset]] = None
